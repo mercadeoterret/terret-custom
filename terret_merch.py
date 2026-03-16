@@ -39,18 +39,17 @@ st.set_page_config(
 )
 
 # ─── CONSTANTES ───────────────────────────────────────────────────────────────
-SPREADSHEET_ID = st.secrets.get("MERCH_SPREADSHEET_ID", "")
-TIENDA_URL     = st.secrets.get("TIENDA_URL", "terret-col.myshopify.com")
-SHOPIFY_TOKEN  = st.secrets.get("SHOPIFY_ACCESS_TOKEN", "")
-ADMIN_PASSWORD = st.secrets.get("MERCH_ADMIN_PASSWORD", "terret2024")
-API_VERSION    = "2024-01"
+SPREADSHEET_ID  = st.secrets.get("MERCH_SPREADSHEET_ID", "")
+TIENDA_URL      = st.secrets.get("TIENDA_URL", "terret-col.myshopify.com")
+SHOPIFY_TOKEN   = st.secrets.get("SHOPIFY_ACCESS_TOKEN", "")
+ADMIN_PASSWORD  = st.secrets.get("MERCH_ADMIN_PASSWORD", "terret2024")
+DRIVE_ROOT_ID   = st.secrets.get("MERCH_DRIVE_ROOT_ID", "")
+API_VERSION     = "2024-01"
 
 HOJA_EQUIPOS     = "Equipos"
 HOJA_COLECCIONES = "Colecciones"
 HOJA_PRODUCTOS   = "Productos"
 HOJA_PEDIDOS     = "Pedidos"
-
-DRIVE_ROOT_NAME  = "Térret Tienda Custom"
 
 # ─── ESTILOS ──────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -166,28 +165,40 @@ def conectar_drive():
 
 
 # ─── DRIVE HELPERS ────────────────────────────────────────────────────────────
-def drive_get_or_create_folder(drive, nombre, parent_id=None):
-    q = f"mimeType='application/vnd.google-apps.folder' and name='{nombre}' and trashed=false"
-    if parent_id:
-        q += f" and '{parent_id}' in parents"
-    results = drive.files().list(q=q, fields="files(id,name)").execute()
+# Todos los métodos usan supportsAllDrives=True e includeItemsFromAllDrives=True
+# porque los archivos viven en una Unidad Compartida de Google Workspace.
+
+def drive_get_or_create_folder(drive, nombre, parent_id):
+    """Busca una subcarpeta por nombre dentro de parent_id. Si no existe, la crea."""
+    q = (f"mimeType='application/vnd.google-apps.folder' "
+         f"and name='{nombre}' "
+         f"and '{parent_id}' in parents "
+         f"and trashed=false")
+    results = drive.files().list(
+        q=q,
+        fields="files(id,name)",
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+    ).execute()
     files = results.get("files", [])
     if files:
         return files[0]["id"]
-    meta = {"name": nombre, "mimeType": "application/vnd.google-apps.folder"}
-    if parent_id:
-        meta["parents"] = [parent_id]
-    folder = drive.files().create(body=meta, fields="id").execute()
+    meta = {
+        "name": nombre,
+        "mimeType": "application/vnd.google-apps.folder",
+        "parents": [parent_id],
+    }
+    folder = drive.files().create(
+        body=meta,
+        fields="id",
+        supportsAllDrives=True,
+    ).execute()
     return folder["id"]
 
 
-def drive_get_root_id(drive):
-    return drive_get_or_create_folder(drive, DRIVE_ROOT_NAME)
-
-
 def drive_get_equipo_folder(drive, equipo_nombre):
-    root = drive_get_root_id(drive)
-    return drive_get_or_create_folder(drive, equipo_nombre, root)
+    """Carpeta del equipo dentro de la Unidad Compartida raíz."""
+    return drive_get_or_create_folder(drive, equipo_nombre, DRIVE_ROOT_ID)
 
 
 def drive_get_coleccion_folder(drive, equipo_nombre, temporada):
@@ -201,23 +212,38 @@ def drive_get_producto_folder(drive, equipo_nombre, temporada, producto_nombre):
 
 
 def drive_upload_file(drive, file_bytes, filename, mimetype, parent_id):
+    """Sube un archivo a la Unidad Compartida y lo hace público de solo lectura."""
     media   = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mimetype)
     meta    = {"name": filename, "parents": [parent_id]}
-    f       = drive.files().create(body=meta, media_body=media, fields="id").execute()
+    f       = drive.files().create(
+        body=meta,
+        media_body=media,
+        fields="id",
+        supportsAllDrives=True,
+    ).execute()
     file_id = f["id"]
     drive.permissions().create(
         fileId=file_id,
         body={"type": "anyone", "role": "reader"},
+        supportsAllDrives=True,
     ).execute()
     url = f"https://drive.google.com/uc?export=view&id={file_id}"
     return file_id, url
 
 
 def drive_list_fotos(drive, folder_id):
+    """Lista imágenes dentro de una carpeta de la Unidad Compartida."""
     if not folder_id:
         return []
-    q = f"'{folder_id}' in parents and trashed=false and mimeType contains 'image/'"
-    results = drive.files().list(q=q, fields="files(id,name)").execute()
+    q = (f"'{folder_id}' in parents "
+         f"and trashed=false "
+         f"and mimeType contains 'image/'")
+    results = drive.files().list(
+        q=q,
+        fields="files(id,name)",
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+    ).execute()
     files = results.get("files", [])
     return [(f["id"], f"https://drive.google.com/uc?export=view&id={f['id']}") for f in files]
 
