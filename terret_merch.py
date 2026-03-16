@@ -299,13 +299,13 @@ def leer_colecciones(_client):
 def leer_productos(_client):
     ws = get_ws(_client, HOJA_PRODUCTOS,
                 ["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio",
-                 "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
+                 "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Personalizable", "Activo"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records(expected_headers=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio", "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Activo"])
+    data = ws.get_all_records(expected_headers=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio", "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Personalizable", "Activo"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio",
-                 "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Activo"])
+                 "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Personalizable", "Activo"])
 
 
 @st.cache_data(ttl=30)
@@ -314,15 +314,15 @@ def leer_pedidos(_client):
                 ["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID",
                  "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email",
                  "Productos_JSON", "Total", "Shopify_Draft_ID",
-                 "Shopify_Order_ID", "Estado", "Notas"])
+                 "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Estado", "Notas"])
+    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID",
                  "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email",
                  "Productos_JSON", "Total", "Shopify_Draft_ID",
-                 "Shopify_Order_ID", "Estado", "Notas"])
+                 "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
 
 
 def guardar_equipo(client, eq):
@@ -366,7 +366,7 @@ def guardar_producto(client, prod):
             prod["id"], prod["coleccion_id"], prod["nombre"],
             prod["descripcion"], prod["precio"], prod["tallas"],
             prod["colores"], prod.get("drive_folder_id", ""),
-            prod.get("fotos_urls", ""), "SI",
+            prod.get("fotos_urls", ""), prod.get("personalizable", "NO"), "SI",
         ])
         st.cache_data.clear()
         return True
@@ -386,7 +386,8 @@ def guardar_pedido(client, pedido):
             pedido["usuario_nombre"], pedido["usuario_email"],
             json.dumps(pedido["productos"], ensure_ascii=False),
             pedido["total"], pedido.get("shopify_draft_id", ""),
-            pedido.get("shopify_order_id", ""), "PENDIENTE", pedido.get("notas", ""),
+            pedido.get("shopify_order_id", ""), pedido.get("invoice_url", ""),
+            "PENDIENTE", pedido.get("notas", ""),
         ])
         st.cache_data.clear()
         return True
@@ -529,10 +530,11 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
             "requires_shipping": True,
             "taxable": True,
             "properties": [
-                {"name": "Talla",     "value": item.get("talla", "")},
-                {"name": "Color",     "value": item.get("color", "")},
-                {"name": "Equipo",    "value": equipo_nombre},
-                {"name": "Colección", "value": coleccion_nombre},
+                {"name": "Talla",             "value": item.get("talla", "")},
+                {"name": "Color",             "value": item.get("color", "")},
+                {"name": "Equipo",            "value": equipo_nombre},
+                {"name": "Colección",         "value": coleccion_nombre},
+                {"name": "Nombre camiseta",   "value": item.get("nombre_camiseta", "")},
             ],
         })
 
@@ -823,8 +825,8 @@ def vista_admin(client, drive):
                 with c2:
                     col_temp  = st.text_input("Temporada *", key="col_temp",
                                               placeholder="Ej: 2025-Q2")
-                    col_corte = st.text_input("Fecha de corte", key="col_corte",
-                                             placeholder="Ej: 30/06/2025")
+                    col_corte_dt = st.date_input("Fecha de corte", value=None, key="col_corte")
+                    col_corte = col_corte_dt.strftime("%d/%m/%Y") if col_corte_dt else ""
 
                 if st.button("CREAR COLECCIÓN", key="btn_crear_col"):
                     if not col_nombre or not col_temp:
@@ -889,15 +891,28 @@ def vista_admin(client, drive):
                                     unsafe_allow_html=True,
                                 )
                         with c2:
+                            personalizable = p.get("Personalizable", "NO") == "SI"
                             st.markdown(
                                 f"<div style='font-size:12px;color:#888;line-height:2;'>"
                                 f"<b style='color:#F5F0E8;'>Tallas:</b> {p.get('Tallas','—')}<br>"
                                 f"<b style='color:#F5F0E8;'>Colores:</b> {p.get('Colores','—')}<br>"
+                                f"<b style='color:#F5F0E8;'>Personalizable:</b> "
+                                f"<span style='color:{"#00C853" if personalizable else "#555"};'>"
+                                f"{"✅ SÍ" if personalizable else "⚫ NO"}</span><br>"
                                 f"<b style='color:#F5F0E8;'>Descripción:</b> "
                                 f"{p.get('Descripcion','—')}"
                                 f"</div>",
                                 unsafe_allow_html=True,
                             )
+                            # Toggle personalizable
+                            lbl_pers = "QUITAR PERSONALIZABLE" if personalizable else "HACER PERSONALIZABLE"
+                            if st.button(lbl_pers, key=f"pers_{p['ID']}"):
+                                ws_p = get_ws(client, HOJA_PRODUCTOS)
+                                cell_p = ws_p.find(p["ID"]) if ws_p else None
+                                if cell_p:
+                                    ws_p.update_cell(cell_p.row, 10, "NO" if personalizable else "SI")
+                                    st.cache_data.clear()
+                                    st.rerun()
                             nuevas_fotos = st.file_uploader(
                                 "Agregar fotos (drag & drop múltiple)",
                                 type=["jpg", "jpeg", "png", "webp"],
@@ -933,7 +948,7 @@ def vista_admin(client, drive):
                         with pa:
                             lbl_p = "DESACTIVAR" if prod_activo else "ACTIVAR"
                             if st.button(lbl_p, key=f"deact_p_{p['ID']}"):
-                                desactivar_registro(client, HOJA_PRODUCTOS, p["ID"], 10)
+                                desactivar_registro(client, HOJA_PRODUCTOS, p["ID"], 11)
                                 st.rerun()
                         with pb:
                             if tiene_pedidos(df_ped_pro, "Productos_JSON", p["ID"]):
@@ -1002,6 +1017,11 @@ def vista_admin(client, drive):
                         prod_desc    = st.text_area("Descripción", key="prod_desc",
                                                     placeholder="Material, detalles del diseño…")
 
+                    prod_personalizable = st.checkbox(
+                        "¿Producto personalizable? (el usuario puede poner su nombre)",
+                        key="prod_personalizable"
+                    )
+
                     prod_fotos = st.file_uploader(
                         "Fotos del producto (drag & drop múltiple)",
                         type=["jpg", "jpeg", "png", "webp"],
@@ -1032,6 +1052,7 @@ def vista_admin(client, drive):
                                     "precio": prod_precio, "tallas": prod_tallas,
                                     "colores": prod_colores, "drive_folder_id": folder_id,
                                     "fotos_urls": ",".join(fotos_urls_list),
+                                    "personalizable": "SI" if prod_personalizable else "NO",
                                 }
                                 if guardar_producto(client, nuevo):
                                     n = len(prod_fotos) if prod_fotos else 0
@@ -1175,6 +1196,46 @@ def vista_tienda(client, drive, codigo_equipo):
             unsafe_allow_html=True,
         )
 
+    # ── Recuperar pedido pendiente ─────────────────────────────────────────────
+    with st.expander("¿Ya hiciste un pedido y perdiste el link de pago?"):
+        email_rec = st.text_input("Ingresa tu correo electrónico", key="email_recuperar",
+                                  placeholder="El correo que usaste al hacer el pedido")
+        if st.button("BUSCAR MI PEDIDO", key="btn_recuperar"):
+            if not email_rec or "@" not in email_rec:
+                st.error("Ingresa un correo válido.")
+            else:
+                df_ped_rec = leer_pedidos(client)
+                pedidos_rec = df_ped_rec[
+                    (df_ped_rec["Usuario_Email"].str.lower() == email_rec.lower().strip()) &
+                    (df_ped_rec["Equipo_ID"] == eq_id) &
+                    (df_ped_rec["Estado"] == "PENDIENTE")
+                ] if not df_ped_rec.empty else pd.DataFrame()
+
+                if pedidos_rec.empty:
+                    st.info("No encontramos pedidos pendientes con ese correo para este equipo.")
+                else:
+                    for _, ped_rec in pedidos_rec.sort_values("Fecha", ascending=False).iterrows():
+                        inv_url = ped_rec.get("Invoice_URL", "")
+                        if inv_url:
+                            st.markdown(
+                                f"<div style='background:#0a1a0a;border:1px solid #1a3a1a;"
+                                f"border-radius:6px;padding:16px;margin-bottom:8px;'>"
+                                f"<div style='font-size:13px;margin-bottom:8px;'>"
+                                f"Pedido <b style='color:#F5F0E8;'>{ped_rec.get('ID','')}</b> · "
+                                f"{ped_rec.get('Fecha','')} · "
+                                f"<b style='color:#F5F0E8;'>{fmt_precio(ped_rec.get('Total',0))}</b>"
+                                f"</div>"
+                                f"<a href='{inv_url}' target='_blank' "
+                                f"style='background:#00C853;color:#0A0A0A;"
+                                f"font-family:Bebas Neue,sans-serif;font-size:14px;"
+                                f"letter-spacing:2px;padding:8px 20px;border-radius:3px;"
+                                f"text-decoration:none;display:inline-block;'>"
+                                f"IR AL PAGO →</a></div>",
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            st.info(f"Pedido {ped_rec.get('ID','')} encontrado pero sin link de pago. Contacta a Térret.")
+
     if cols_activas.empty:
         st.markdown(
             "<div style='text-align:center;padding:80px;color:#666;'>"
@@ -1264,6 +1325,15 @@ def vista_tienda(client, drive, codigo_equipo):
                 color_sel = st.selectbox("Color", colores, key=f"color_{prod_key}") if colores else ""
                 cant      = st.number_input("Cantidad", min_value=1, max_value=20,
                                             value=1, key=f"cant_{prod_key}")
+                es_personalizable = str(prod.get("Personalizable", "NO")).upper() == "SI"
+                nombre_camiseta = ""
+                if es_personalizable:
+                    nombre_camiseta = st.text_input(
+                        "Nombre en la camiseta (opcional, máx. 20 caracteres)",
+                        max_chars=20,
+                        key=f"nombre_cam_{prod_key}",
+                        placeholder="Ej: CARLOS",
+                    )
 
                 if st.button("AGREGAR AL CARRITO", key=f"add_{prod_key}"):
                     st.session_state.carrito.append({
@@ -1275,6 +1345,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         "cantidad":         int(cant),
                         "coleccion_id":     col_id,
                         "coleccion_nombre": col_nombre,
+                        "nombre_camiseta":  nombre_camiseta.strip().upper() if nombre_camiseta else "",
                     })
                     st.success(f"✅ {prod['Nombre']} agregado")
 
@@ -1293,7 +1364,9 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"<div style='font-weight:500;'>{item['nombre']}</div>"
                     f"<div style='font-size:11px;color:#666;'>"
                     f"Talla: {item['talla']} · Color: {item['color']} · "
-                    f"x{item['cantidad']} · {item.get('coleccion_nombre','')}</div></div>",
+                    f"x{item['cantidad']} · {item.get('coleccion_nombre','')}"
+                    + (f" · Nombre: <b style='color:#F5F0E8;'>{item['nombre_camiseta']}</b>" if item.get('nombre_camiseta') else "")
+                    + "</div></div>",
                     unsafe_allow_html=True,
                 )
             with c2:
@@ -1369,6 +1442,7 @@ def vista_tienda(client, drive, codigo_equipo):
                             "productos":        st.session_state.carrito,
                             "total":            total,
                             "shopify_draft_id": draft["id"],
+                            "invoice_url":      draft.get("invoice_url", ""),
                             "notas":            notas,
                         }
                         guardar_pedido(client, pedido_data)
