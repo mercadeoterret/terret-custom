@@ -302,10 +302,10 @@ def leer_productos(_client):
                  "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records(expected_headers=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio", "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
+    data = ws.get_all_records(expected_headers=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio", "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Activo"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio",
-                 "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
+                 "Tallas", "Colores", "Drive_Folder_ID", "Fotos_URLs", "Activo"])
 
 
 @st.cache_data(ttl=30)
@@ -365,7 +365,8 @@ def guardar_producto(client, prod):
         ws.append_row([
             prod["id"], prod["coleccion_id"], prod["nombre"],
             prod["descripcion"], prod["precio"], prod["tallas"],
-            prod["colores"], prod.get("drive_folder_id", ""), "SI",
+            prod["colores"], prod.get("drive_folder_id", ""),
+            prod.get("fotos_urls", ""), "SI",
         ])
         st.cache_data.clear()
         return True
@@ -391,6 +392,22 @@ def guardar_pedido(client, pedido):
         return True
     except Exception as e:
         st.error(f"Error guardando pedido: {e}")
+        return False
+
+
+def actualizar_fotos_producto(client, producto_id, fotos_urls_str):
+    """Guarda la lista de URLs de fotos (separadas por coma) en la columna Fotos_URLs."""
+    ws = get_ws(client, HOJA_PRODUCTOS)
+    if not ws:
+        return False
+    try:
+        cell = ws.find(producto_id)
+        if cell:
+            ws.update_cell(cell.row, 9, fotos_urls_str)  # columna 9 = Fotos_URLs
+        st.cache_data.clear()
+        return True
+    except Exception as e:
+        st.error(f"Error actualizando fotos: {e}")
         return False
 
 
@@ -833,7 +850,8 @@ def vista_admin(client, drive):
                 for _, p in df_show.iterrows():
                     col_row  = df_col[df_col["ID"] == p.get("Coleccion_ID", "")]
                     col_name = col_row["Nombre"].iloc[0] if not col_row.empty else "—"
-                    fotos    = drive_list_fotos(drive, p.get("Drive_Folder_ID", ""))
+                    fotos_raw = str(p.get("Fotos_URLs", "") or "")
+                    fotos = [(u.strip(), u.strip()) for u in fotos_raw.split(",") if u.strip()]
 
                     with st.expander(
                         f"👕  {p.get('Nombre','')}  ·  "
@@ -881,11 +899,17 @@ def vista_admin(client, drive):
                                     st.error("Este producto no tiene carpeta en Drive.")
                                 else:
                                     with st.spinner(f"Subiendo {len(nuevas_fotos)} foto(s)..."):
+                                        nuevas_urls = []
                                         for f_up in nuevas_fotos:
-                                            drive_upload_file(
+                                            _, url = drive_upload_file(
                                                 drive, f_up.read(),
                                                 f_up.name, f_up.type, folder_id,
                                             )
+                                            nuevas_urls.append(url)
+                                        # Acumular con las existentes en Sheets
+                                        existentes = str(p.get("Fotos_URLs", "") or "")
+                                        todas = [u for u in existentes.split(",") if u.strip()] + nuevas_urls
+                                        actualizar_fotos_producto(client, p["ID"], ",".join(todas))
                                     st.success(f"✅ {len(nuevas_fotos)} foto(s) subidas")
                                     st.rerun()
                         # Acciones del producto
@@ -896,7 +920,7 @@ def vista_admin(client, drive):
                         with pa:
                             lbl_p = "DESACTIVAR" if prod_activo else "ACTIVAR"
                             if st.button(lbl_p, key=f"deact_p_{p['ID']}"):
-                                desactivar_registro(client, HOJA_PRODUCTOS, p["ID"], 9)
+                                desactivar_registro(client, HOJA_PRODUCTOS, p["ID"], 10)
                                 st.rerun()
                         with pb:
                             if tiene_pedidos(df_ped_pro, "Productos_JSON", p["ID"]):
@@ -981,17 +1005,20 @@ def vista_admin(client, drive):
                                 folder_id = drive_get_producto_folder(
                                     drive, prod_equipo, col_temp_sel, prod_nombre,
                                 )
+                                fotos_urls_list = []
                                 if prod_fotos:
                                     for f_up in prod_fotos:
-                                        drive_upload_file(
+                                        _, url = drive_upload_file(
                                             drive, f_up.read(),
                                             f_up.name, f_up.type, folder_id,
                                         )
+                                        fotos_urls_list.append(url)
                                 nuevo = {
                                     "id": prod_id, "coleccion_id": col_id_sel,
                                     "nombre": prod_nombre, "descripcion": prod_desc,
                                     "precio": prod_precio, "tallas": prod_tallas,
                                     "colores": prod_colores, "drive_folder_id": folder_id,
+                                    "fotos_urls": ",".join(fotos_urls_list),
                                 }
                                 if guardar_producto(client, nuevo):
                                     n = len(prod_fotos) if prod_fotos else 0
@@ -1190,7 +1217,8 @@ def vista_tienda(client, drive, codigo_equipo):
                 precio  = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
                 tallas  = [t.strip() for t in str(prod.get("Tallas", "")).split(",") if t.strip()]
                 colores = [c.strip() for c in str(prod.get("Colores", "")).split(",") if c.strip()]
-                fotos   = drive_list_fotos(drive, prod.get("Drive_Folder_ID", ""))
+                fotos_raw = str(prod.get("Fotos_URLs", "") or "")
+                fotos = [(u.strip(), u.strip()) for u in fotos_raw.split(",") if u.strip()]
 
                 img_html = (
                     f"<img src='{fotos[0][1]}' style='width:100%;height:200px;"
