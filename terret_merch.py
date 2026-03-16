@@ -227,7 +227,7 @@ def drive_upload_file(drive, file_bytes, filename, mimetype, parent_id):
         body={"type": "anyone", "role": "reader"},
         supportsAllDrives=True,
     ).execute()
-    url = f"https://drive.google.com/uc?export=view&id={file_id}"
+    url = f"https://lh3.googleusercontent.com/d/{file_id}"
     return file_id, url
 
 
@@ -245,7 +245,7 @@ def drive_list_fotos(drive, folder_id):
         includeItemsFromAllDrives=True,
     ).execute()
     files = results.get("files", [])
-    return [(f["id"], f"https://drive.google.com/uc?export=view&id={f['id']}") for f in files]
+    return [(f["id"], f"https://lh3.googleusercontent.com/d/{f['id']}") for f in files]
 
 
 # ─── SHEETS HELPERS ───────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@ def vista_admin(client, drive):
             for _, eq in df_eq.iterrows():
                 color   = eq.get("Color_Primario", "#F5F0E8") or "#F5F0E8"
                 logo_id = eq.get("Logo_Drive_ID", "")
-                logo_url = f"https://drive.google.com/uc?export=view&id={logo_id}" if logo_id else ""
+                logo_url = f"https://lh3.googleusercontent.com/d/{logo_id}" if logo_id else ""
 
                 with st.expander(f"  {eq.get('Nombre','')}  ·  {eq.get('Codigo','')}"):
                     c1, c2 = st.columns([1, 3])
@@ -1104,7 +1104,7 @@ def vista_tienda(client, drive, codigo_equipo):
     eq_color  = eq.get("Color_Primario", "#F5F0E8") or "#F5F0E8"
     eq_desc   = eq.get("Descripcion", "")
     logo_id   = eq.get("Logo_Drive_ID", "")
-    logo_url  = f"https://drive.google.com/uc?export=view&id={logo_id}" if logo_id else ""
+    logo_url  = f"https://lh3.googleusercontent.com/d/{logo_id}" if logo_id else ""
 
     cols_activas = df_col[
         (df_col["Equipo_ID"] == eq_id) & (df_col["Activa"] == "SI")
