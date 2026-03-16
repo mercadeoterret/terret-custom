@@ -437,6 +437,60 @@ def actualizar_logo_equipo(client, equipo_id, logo_drive_id):
         return False
 
 
+
+
+def desactivar_registro(client, hoja, registro_id, col_activo):
+    """Cambia Activo a NO en cualquier hoja. col_activo es el número de columna (1-based)."""
+    ws = get_ws(client, hoja)
+    if not ws:
+        return False
+    try:
+        cell = ws.find(registro_id)
+        if cell:
+            ws.update_cell(cell.row, col_activo, "NO")
+        st.cache_data.clear()
+        return True
+    except:
+        return False
+
+
+def eliminar_registro(client, hoja, registro_id):
+    """Elimina la fila de un registro del Sheets definitivamente."""
+    ws = get_ws(client, hoja)
+    if not ws:
+        return False
+    try:
+        cell = ws.find(registro_id)
+        if cell:
+            ws.delete_rows(cell.row)
+        st.cache_data.clear()
+        return True
+    except Exception as e:
+        st.error(f"Error eliminando registro: {e}")
+        return False
+
+
+def drive_eliminar_carpeta(drive, folder_id):
+    """Mueve una carpeta de Drive a la papelera."""
+    if not folder_id:
+        return False
+    try:
+        drive.files().update(
+            fileId=folder_id,
+            body={"trashed": True},
+            supportsAllDrives=True,
+        ).execute()
+        return True
+    except:
+        return False
+
+
+def tiene_pedidos(df_ped, campo, valor):
+    """Verifica si existen pedidos asociados a un equipo_id, coleccion_id o prod_id."""
+    if df_ped.empty or campo not in df_ped.columns:
+        return False
+    return not df_ped[df_ped[campo] == valor].empty
+
 # ─── SHOPIFY DRAFT ORDERS ─────────────────────────────────────────────────────
 def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
                       coleccion_nombre, pedido_id):
@@ -578,6 +632,37 @@ def vista_admin(client, drive):
                             f"</div>",
                             unsafe_allow_html=True,
                         )
+                        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+                        df_ped_eq = leer_pedidos(client)
+                        eq_activo = eq.get("Activo", "SI") == "SI"
+                        ba, bb = st.columns(2)
+                        with ba:
+                            lbl = "DESACTIVAR EQUIPO" if eq_activo else "ACTIVAR EQUIPO"
+                            if st.button(lbl, key=f"deact_eq_{eq['ID']}"):
+                                desactivar_registro(client, HOJA_EQUIPOS, eq["ID"], 8)
+                                st.rerun()
+                        with bb:
+                            if tiene_pedidos(df_ped_eq, "Equipo_ID", eq["ID"]):
+                                st.markdown(
+                                    "<div style='font-size:10px;color:#666;padding:8px 0;'>"
+                                    "⚠️ Tiene pedidos — solo se puede desactivar</div>",
+                                    unsafe_allow_html=True,
+                                )
+                            else:
+                                if st.button("🗑 ELIMINAR DEFINITIVO", key=f"del_eq_{eq['ID']}"):
+                                    st.session_state[f"confirm_eq_{eq['ID']}"] = True
+                                if st.session_state.get(f"confirm_eq_{eq['ID']}"):
+                                    st.warning("⚠️ Esto borra el equipo del Sheets. ¿Confirmar?")
+                                    cy, cn = st.columns(2)
+                                    with cy:
+                                        if st.button("SÍ, ELIMINAR", key=f"yes_eq_{eq['ID']}"):
+                                            eliminar_registro(client, HOJA_EQUIPOS, eq["ID"])
+                                            st.session_state.pop(f"confirm_eq_{eq['ID']}", None)
+                                            st.rerun()
+                                    with cn:
+                                        if st.button("CANCELAR", key=f"no_eq_{eq['ID']}"):
+                                            st.session_state.pop(f"confirm_eq_{eq['ID']}", None)
+                                            st.rerun()
 
         # Formulario nuevo equipo
         st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
@@ -673,6 +758,29 @@ def vista_admin(client, drive):
                             ):
                                 actualizar_coleccion_activa(client, col["ID"], not activa)
                                 st.rerun()
+                        # Eliminar colección
+                        df_ped_col = leer_pedidos(client)
+                        if tiene_pedidos(df_ped_col, "Coleccion_ID", col["ID"]):
+                            st.markdown(
+                                "<div style='font-size:10px;color:#555;margin-bottom:6px;'>"
+                                "⚠️ Tiene pedidos — solo desactivar</div>",
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            if st.button("🗑 ELIMINAR", key=f"del_col_{col['ID']}"):
+                                st.session_state[f"confirm_col_{col['ID']}"] = True
+                            if st.session_state.get(f"confirm_col_{col['ID']}"):
+                                st.warning(f"¿Eliminar **{col.get('Nombre','')}** definitivamente?")
+                                cy, cn = st.columns(2)
+                                with cy:
+                                    if st.button("SÍ", key=f"yes_col_{col['ID']}"):
+                                        eliminar_registro(client, HOJA_COLECCIONES, col["ID"])
+                                        st.session_state.pop(f"confirm_col_{col['ID']}", None)
+                                        st.rerun()
+                                with cn:
+                                    if st.button("NO", key=f"no_col_{col['ID']}"):
+                                        st.session_state.pop(f"confirm_col_{col['ID']}", None)
+                                        st.rerun()
 
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
             with st.expander("➕ CREAR NUEVA COLECCIÓN"):
@@ -780,6 +888,49 @@ def vista_admin(client, drive):
                                             )
                                     st.success(f"✅ {len(nuevas_fotos)} foto(s) subidas")
                                     st.rerun()
+                        # Acciones del producto
+                        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                        df_ped_pro = leer_pedidos(client)
+                        prod_activo = p.get("Activo", "SI") == "SI"
+                        pa, pb, pc = st.columns(3)
+                        with pa:
+                            lbl_p = "DESACTIVAR" if prod_activo else "ACTIVAR"
+                            if st.button(lbl_p, key=f"deact_p_{p['ID']}"):
+                                desactivar_registro(client, HOJA_PRODUCTOS, p["ID"], 9)
+                                st.rerun()
+                        with pb:
+                            if tiene_pedidos(df_ped_pro, "Productos_JSON", p["ID"]):
+                                st.markdown(
+                                    "<div style='font-size:10px;color:#555;padding:8px 0;'>"
+                                    "⚠️ En pedidos — solo desactivar</div>",
+                                    unsafe_allow_html=True,
+                                )
+                            else:
+                                if st.button("🗑 ELIMINAR", key=f"del_p_{p['ID']}"):
+                                    st.session_state[f"confirm_p_{p['ID']}"] = True
+                                if st.session_state.get(f"confirm_p_{p['ID']}"):
+                                    st.warning("¿Eliminar este producto definitivamente?")
+                                    py, pn = st.columns(2)
+                                    with py:
+                                        if st.button("SÍ", key=f"yes_p_{p['ID']}"):
+                                            folder_id = p.get("Drive_Folder_ID", "")
+                                            if folder_id:
+                                                drive_eliminar_carpeta(drive, folder_id)
+                                            eliminar_registro(client, HOJA_PRODUCTOS, p["ID"])
+                                            st.session_state.pop(f"confirm_p_{p['ID']}", None)
+                                            st.rerun()
+                                    with pn:
+                                        if st.button("NO", key=f"no_p_{p['ID']}"):
+                                            st.session_state.pop(f"confirm_p_{p['ID']}", None)
+                                            st.rerun()
+                        with pc:
+                            estado_txt = "🟢 ACTIVO" if prod_activo else "⚫ INACTIVO"
+                            color_est  = "#00C853" if prod_activo else "#555"
+                            st.markdown(
+                                f"<div style='font-size:11px;color:{color_est};"
+                                f"padding:8px 0;'>{estado_txt}</div>",
+                                unsafe_allow_html=True,
+                            )
 
             # Formulario nuevo producto
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
