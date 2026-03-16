@@ -1002,9 +1002,12 @@ def vista_tienda(client, drive, codigo_equipo):
         col_nombre = col["Nombre"]
         col_corte  = col.get("Fecha_Corte", "")
 
-        productos = df_pro[
-            (df_pro["Coleccion_ID"] == col_id) & (df_pro["Activo"] == "SI")
-        ]
+        if df_pro.empty or "Coleccion_ID" not in df_pro.columns:
+            productos = pd.DataFrame()
+        else:
+            productos = df_pro[
+                (df_pro["Coleccion_ID"] == col_id) & (df_pro["Activo"] == "SI")
+            ]
 
         corte_html = (
             f"<div style='background:#1a1a00;border:1px solid #333300;"
