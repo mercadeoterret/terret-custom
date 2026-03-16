@@ -673,6 +673,10 @@ def vista_admin(client, drive):
                                     cy, cn = st.columns(2)
                                     with cy:
                                         if st.button("SÍ, ELIMINAR", key=f"yes_eq_{eq['ID']}"):
+                                            # Buscar carpeta del equipo en Drive y eliminarla
+                                            eq_folder_id = drive_get_equipo_folder(drive, eq["Nombre"])
+                                            if eq_folder_id:
+                                                drive_eliminar_carpeta(drive, eq_folder_id)
                                             eliminar_registro(client, HOJA_EQUIPOS, eq["ID"])
                                             st.session_state.pop(f"confirm_eq_{eq['ID']}", None)
                                             st.rerun()
@@ -791,6 +795,15 @@ def vista_admin(client, drive):
                                 cy, cn = st.columns(2)
                                 with cy:
                                     if st.button("SÍ", key=f"yes_col_{col['ID']}"):
+                                        # Buscar carpeta de la colección en Drive y eliminarla
+                                        eq_row_col = df_eq[df_eq["ID"] == col.get("Equipo_ID","")]
+                                        if not eq_row_col.empty:
+                                            eq_nom_col = eq_row_col.iloc[0]["Nombre"]
+                                            col_folder_id = drive_get_coleccion_folder(
+                                                drive, eq_nom_col, col.get("Temporada","")
+                                            )
+                                            if col_folder_id:
+                                                drive_eliminar_carpeta(drive, col_folder_id)
                                         eliminar_registro(client, HOJA_COLECCIONES, col["ID"])
                                         st.session_state.pop(f"confirm_col_{col['ID']}", None)
                                         st.rerun()
