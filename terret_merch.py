@@ -278,7 +278,7 @@ def leer_equipos(_client):
                  "Color_Secundario", "Descripcion", "Activo"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records()
+    data = ws.get_all_records(expected_headers=["ID", "Nombre", "Codigo", "Logo_Drive_ID", "Color_Primario", "Color_Secundario", "Descripcion", "Activo"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Nombre", "Codigo", "Logo_Drive_ID", "Color_Primario",
                  "Color_Secundario", "Descripcion", "Activo"])
@@ -290,7 +290,7 @@ def leer_colecciones(_client):
                 ["ID", "Equipo_ID", "Nombre", "Temporada", "Activa", "Fecha_Corte"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records()
+    data = ws.get_all_records(expected_headers=["ID", "Equipo_ID", "Nombre", "Temporada", "Activa", "Fecha_Corte"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Equipo_ID", "Nombre", "Temporada", "Activa", "Fecha_Corte"])
 
@@ -302,7 +302,7 @@ def leer_productos(_client):
                  "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records()
+    data = ws.get_all_records(expected_headers=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio", "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Coleccion_ID", "Nombre", "Descripcion", "Precio",
                  "Tallas", "Colores", "Drive_Folder_ID", "Activo"])
@@ -317,7 +317,7 @@ def leer_pedidos(_client):
                  "Shopify_Order_ID", "Estado", "Notas"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records()
+    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Estado", "Notas"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID",
                  "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email",
