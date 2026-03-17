@@ -540,18 +540,19 @@ def tiene_pedidos(df_ped, campo, valor):
 
 
 
+SHOPIFY_BESTSELLERS_COLLECTION_ID = "483902390497"
+
 def shopify_get_best_sellers(limit=6):
-    """Obtiene productos de Shopify ordenados por ventas con stock disponible."""
+    """Obtiene productos de la colección Best sellers smart con stock disponible."""
     if not SHOPIFY_TOKEN:
         return []
     try:
-        # Obtener productos con inventario disponible
-        url = f"https://{TIENDA_URL}/admin/api/{API_VERSION}/products.json"
+        # Leer productos de la colección específica
+        url = (f"https://{TIENDA_URL}/admin/api/{API_VERSION}"
+               f"/collections/{SHOPIFY_BESTSELLERS_COLLECTION_ID}/products.json")
         headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
         params = {
-            "limit": 24,
-            "status": "active",
-            "published_status": "published",
+            "limit": limit * 3,  # pedir más por si algunos no tienen stock
             "fields": "id,title,variants,images,handle",
         }
         resp = requests.get(url, headers=headers, params=params, timeout=15)
@@ -561,7 +562,7 @@ def shopify_get_best_sellers(limit=6):
         products = resp.json().get("products", [])
         resultado = []
         for prod in products:
-            # Filtrar variantes con stock > 0
+            # Solo variantes con stock > 0
             variantes_con_stock = []
             for v in prod.get("variants", []):
                 inv = v.get("inventory_quantity", 0)
@@ -574,15 +575,14 @@ def shopify_get_best_sellers(limit=6):
             imgs = prod.get("images", [])
             if imgs:
                 imagen = imgs[0].get("src", "")
-            # Precio mínimo disponible
             precio_min = min(float(v["price"]) for v in variantes_con_stock)
             resultado.append({
-                "id":              prod["id"],
-                "titulo":          prod["title"],
-                "handle":          prod["handle"],
-                "imagen":          imagen,
-                "precio":          precio_min,
-                "variantes":       variantes_con_stock,
+                "id":        prod["id"],
+                "titulo":    prod["title"],
+                "handle":    prod["handle"],
+                "imagen":    imagen,
+                "precio":    precio_min,
+                "variantes": variantes_con_stock,
             })
             if len(resultado) >= limit:
                 break
