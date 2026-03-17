@@ -2168,48 +2168,57 @@ def vista_tienda(client, drive, codigo_equipo):
             )
 
 
-        # ── Botones de acción — HTML real para control visual total ─────────────
-        hay_extras = bool(crosssell_cart)
-        btn_label  = "AGREGAR AL PEDIDO Y PAGAR" if hay_extras else "IR AL PAGO"
 
-        components.html(f"""
+        # ── Botones de acción ─────────────────────────────────────────────────────
+        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+
+        # Botón primario — IR AL PAGO (negro, full width)
+        st.markdown("""
         <style>
-          body {{ margin:0; padding:0; background:transparent; }}
-          .btn-primary {{
-            display:block; width:100%; padding:16px 24px;
-            background:#0A0A0A; color:#FFFFFF;
-            font-family:'Bebas Neue',sans-serif;
-            font-size:15px; letter-spacing:3px;
-            border:none; border-radius:2px;
-            cursor:pointer; margin-bottom:12px;
-            text-align:center;
-          }}
-          .btn-primary:hover {{ background:#333333; }}
-          .btn-skip {{
-            display:block; width:100%; padding:10px 24px;
-            background:transparent; color:#666333;
-            font-family:'Bebas Neue',sans-serif;
-            font-size:11px; letter-spacing:2px;
-            border:none; cursor:pointer;
-            text-align:center;
-            text-decoration:underline;
-            text-underline-offset:3px;
-          }}
-          .btn-skip:hover {{ color:#666; }}
-        </style>
-        <button class='btn-primary' onclick=\"window.parent.document.querySelector('[data-testid=stButton] button[kind=secondaryFormSubmit], [data-testid=stButton]:nth-of-type(1) button').click()\">→ {btn_label}</button>
-        <button class='btn-skip' onclick=\"window.parent.document.querySelectorAll('[data-testid=stButton] button')[document.querySelectorAll('[data-testid=stButton] button').length-1]?.click()\">Continuar sin agregar</button>
-        """, height=110)
+        div[data-testid='stButton']:has(> button[kind='primary']) > button {
+            background: #0A0A0A !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            font-size: 15px !important;
+            letter-spacing: 3px !important;
+            padding: 16px 24px !important;
+            width: 100% !important;
+        }
+        </style>""", unsafe_allow_html=True)
 
-        # Botones funcionales — en contenedor colapsado
-        with st.container():
-            st.markdown('<div style="height:0;overflow:hidden;opacity:0;pointer-events:none;position:absolute">', unsafe_allow_html=True)
-            col_p, col_s = st.columns([1,1])
-            with col_p:
-                clicked_pagar = st.button(btn_label, key="btn_cs_pagar")
-            with col_s:
-                clicked_skip  = st.button("Continuar sin agregar", key="btn_cs_skip")
-            st.markdown('</div>', unsafe_allow_html=True)
+        btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
+        clicked_pagar = st.button(btn_label, key="btn_cs_pagar", type="primary",
+                                   use_container_width=True)
+
+        # Separador
+        st.markdown(
+            "<div style='text-align:center;padding:12px 0;'>"
+            "<span style='font-size:12px;color:#999;letter-spacing:1px;'>"
+            "─────────────────────────────</span></div>",
+            unsafe_allow_html=True,
+        )
+
+        # Botón skip — solo texto, sin borde
+        st.markdown("""
+        <style>
+        div[data-testid='stButton']:has(> button[key='btn_cs_skip']) > button {
+            background: transparent !important;
+            color: #888 !important;
+            border: none !important;
+            font-size: 11px !important;
+            letter-spacing: 2px !important;
+            box-shadow: none !important;
+            text-decoration: underline !important;
+            text-underline-offset: 3px !important;
+        }
+        div[data-testid='stButton']:has(> button[key='btn_cs_skip']) > button:hover {
+            color: #555 !important;
+            opacity: 1 !important;
+        }
+        </style>""", unsafe_allow_html=True)
+
+        clicked_skip = st.button("Continuar sin agregar →", key="btn_cs_skip",
+                                  use_container_width=True)
 
         if clicked_pagar:
             if crosssell_cart and draft_id:
@@ -2248,6 +2257,7 @@ def vista_tienda(client, drive, codigo_equipo):
             st.session_state.pop("crosssell_products", None)
             st.session_state.pop("cs_mostrar", None)
             st.rerun()
+
 
     elif step == "confirmed":
         # Pantalla de confirmación centrada
