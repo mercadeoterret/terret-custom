@@ -274,13 +274,13 @@ def get_ws(client, nombre, headers=None):
 @st.cache_data(ttl=60)
 def leer_equipos(_client):
     ws = get_ws(_client, HOJA_EQUIPOS,
-                ["ID", "Nombre", "Codigo", "Logo_Drive_ID", "Color_Primario",
+                ["ID", "Nombre", "Codigo", "PIN", "Logo_Drive_ID", "Color_Primario",
                  "Color_Secundario", "Descripcion", "Activo"])
     if not ws:
         return pd.DataFrame()
     data = ws.get_all_records(expected_headers=["ID", "Nombre", "Codigo", "Logo_Drive_ID", "Color_Primario", "Color_Secundario", "Descripcion", "Activo"])
     return pd.DataFrame(data) if data else pd.DataFrame(
-        columns=["ID", "Nombre", "Codigo", "Logo_Drive_ID", "Color_Primario",
+        columns=["ID", "Nombre", "Codigo", "PIN", "Logo_Drive_ID", "Color_Primario",
                  "Color_Secundario", "Descripcion", "Activo"])
 
 
@@ -331,7 +331,8 @@ def guardar_equipo(client, eq):
         return False
     try:
         ws.append_row([
-            eq["id"], eq["nombre"], eq["codigo"], eq.get("logo_drive_id", ""),
+            eq["id"], eq["nombre"], eq["codigo"], eq.get("pin", ""),
+            eq.get("logo_drive_id", ""),
             eq["color_primario"], eq["color_secundario"], eq["descripcion"], "SI",
         ])
         st.cache_data.clear()
@@ -396,6 +397,22 @@ def guardar_pedido(client, pedido):
         return False
 
 
+def actualizar_pin_equipo(client, equipo_id, nuevo_pin):
+    """Actualiza el PIN de acceso de un equipo."""
+    ws = get_ws(client, HOJA_EQUIPOS)
+    if not ws:
+        return False
+    try:
+        cell = ws.find(equipo_id)
+        if cell:
+            ws.update_cell(cell.row, 4, str(nuevo_pin))  # col 4 = PIN
+        st.cache_data.clear()
+        return True
+    except Exception as e:
+        st.error(f"Error actualizando PIN: {e}")
+        return False
+
+
 def actualizar_fotos_producto(client, producto_id, fotos_urls_str):
     """Guarda la lista de URLs de fotos (separadas por coma) en la columna Fotos_URLs."""
     ws = get_ws(client, HOJA_PRODUCTOS)
@@ -448,7 +465,7 @@ def actualizar_logo_equipo(client, equipo_id, logo_drive_id):
     try:
         cell = ws.find(equipo_id)
         if cell:
-            ws.update_cell(cell.row, 4, logo_drive_id)
+            ws.update_cell(cell.row, 5, logo_drive_id)
         st.cache_data.clear()
         return True
     except:
@@ -638,11 +655,15 @@ def vista_admin(client, drive):
                                     st.success("Logo actualizado")
                                     st.rerun()
                     with c2:
+                        pin_actual = str(eq.get("PIN", "") or "—")
                         st.markdown(
                             f"<div style='font-size:12px;color:#666;line-height:2;'>"
                             f"<b style='color:#F5F0E8;'>Color primario:</b> "
                             f"<span style='background:{color};padding:2px 14px;"
                             f"border-radius:2px;'>&nbsp;</span> {color}<br>"
+                            f"<b style='color:#F5F0E8;'>PIN actual:</b> "
+                            f"<span style='font-family:DM Mono,monospace;color:#FFB800;'>"
+                            f"{pin_actual}</span><br>"
                             f"<b style='color:#F5F0E8;'>Descripción:</b> "
                             f"{eq.get('Descripcion','—')}<br>"
                             f"<b style='color:#F5F0E8;'>Link tienda:</b> "
@@ -651,6 +672,19 @@ def vista_admin(client, drive):
                             f"</div>",
                             unsafe_allow_html=True,
                         )
+                        # Cambiar PIN
+                        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                        nuevo_pin_input = st.text_input(
+                            "Nuevo PIN (4-6 dígitos)", key=f"nuevo_pin_{eq['ID']}",
+                            max_chars=6, placeholder="Ej: 5531"
+                        )
+                        if st.button("CAMBIAR PIN", key=f"btn_pin_{eq['ID']}"):
+                            if not nuevo_pin_input or not nuevo_pin_input.isdigit() or not (4 <= len(nuevo_pin_input) <= 6):
+                                st.error("El PIN debe ser numérico y tener entre 4 y 6 dígitos.")
+                            else:
+                                if actualizar_pin_equipo(client, eq["ID"], nuevo_pin_input):
+                                    st.success(f"✅ PIN actualizado a `{nuevo_pin_input}`")
+                                    st.rerun()
                         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
                         df_ped_eq = leer_pedidos(client)
                         eq_activo = eq.get("Activo", "SI") == "SI"
@@ -658,7 +692,7 @@ def vista_admin(client, drive):
                         with ba:
                             lbl = "DESACTIVAR EQUIPO" if eq_activo else "ACTIVAR EQUIPO"
                             if st.button(lbl, key=f"deact_eq_{eq['ID']}"):
-                                desactivar_registro(client, HOJA_EQUIPOS, eq["ID"], 8)
+                                desactivar_registro(client, HOJA_EQUIPOS, eq["ID"], 9)
                                 st.rerun()
                         with bb:
                             if tiene_pedidos(df_ped_eq, "Equipo_ID", eq["ID"]):
@@ -700,6 +734,9 @@ def vista_admin(client, drive):
                 eq_color1 = st.color_picker("Color primario", "#F5F0E8", key="eq_color1")
                 eq_color2 = st.color_picker("Color secundario", "#0A0A0A", key="eq_color2")
 
+            eq_pin     = st.text_input("PIN de acceso * (4-6 dígitos)", key="eq_pin",
+                                       placeholder="Ej: 2847",
+                                       max_chars=6)
             eq_desc    = st.text_area("Descripción / mensaje", key="eq_desc",
                                       placeholder="Bienvenido al portal de merch oficial de…")
             logo_nuevo = st.file_uploader("Logo del equipo (opcional)",
@@ -709,6 +746,8 @@ def vista_admin(client, drive):
             if st.button("CREAR EQUIPO", key="btn_crear_eq"):
                 if not eq_nombre or not eq_codigo:
                     st.error("Nombre y código son obligatorios.")
+                elif not eq_pin or not eq_pin.isdigit() or not (4 <= len(eq_pin) <= 6):
+                    st.error("El PIN debe ser numérico y tener entre 4 y 6 dígitos.")
                 else:
                     eq_id    = str(uuid.uuid4())[:8].upper()
                     logo_id  = ""
@@ -723,6 +762,7 @@ def vista_admin(client, drive):
                         nuevo = {
                             "id": eq_id, "nombre": eq_nombre,
                             "codigo": eq_codigo.upper().strip(),
+                            "pin": eq_pin.strip(),
                             "logo_drive_id": logo_id,
                             "color_primario": eq_color1,
                             "color_secundario": eq_color2,
@@ -730,7 +770,7 @@ def vista_admin(client, drive):
                         }
                         if guardar_equipo(client, nuevo):
                             st.success(f"✅ Equipo **{eq_nombre}** creado")
-                            st.info(f"🔗 Link: `?equipo={eq_codigo.upper()}`")
+                            st.info(f"🔗 Link: `?equipo={eq_codigo.upper()}` · PIN: `{eq_pin}`")
 
     # ── TAB 2: COLECCIONES ────────────────────────────────────────────────────
     with tab2:
@@ -1166,6 +1206,41 @@ def vista_tienda(client, drive, codigo_equipo):
     eq_desc   = eq.get("Descripcion", "")
     logo_id   = eq.get("Logo_Drive_ID", "")
     logo_url  = f"https://lh3.googleusercontent.com/d/{logo_id}" if logo_id else ""
+    eq_pin    = str(eq.get("PIN", "") or "")
+
+    # ── Verificación de PIN ────────────────────────────────────────────────────
+    session_key = f"pin_ok_{eq_id}"
+    if eq_pin and not st.session_state.get(session_key):
+        logo_html_pin = (
+            f"<img src='{logo_url}' style='height:48px;object-fit:contain;"
+            f"margin-bottom:12px;border-radius:4px;'>"
+            if logo_url else ""
+        )
+        st.markdown(
+            f"<div style='max-width:360px;margin:80px auto;text-align:center;'>"
+            f"{logo_html_pin}"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
+            f"letter-spacing:4px;color:{eq_color};margin-bottom:4px;'>"
+            f"{eq_nombre.upper()}</div>"
+            f"<div style='font-size:11px;color:#666;letter-spacing:2px;"
+            f"margin-bottom:32px;'>COLECCIÓN EXCLUSIVA</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        _, col_pin, _ = st.columns([1, 2, 1])
+        with col_pin:
+            pin_input = st.text_input(
+                "Ingresa el PIN de acceso", type="password",
+                key=f"pin_input_{eq_id}", max_chars=6,
+                placeholder="PIN numérico",
+            )
+            if st.button("ACCEDER", key=f"btn_pin_acceder_{eq_id}"):
+                if pin_input.strip() == eq_pin.strip():
+                    st.session_state[session_key] = True
+                    st.rerun()
+                else:
+                    st.error("PIN incorrecto. Verifica con tu coach.")
+        st.stop()
 
     cols_activas = df_col[
         (df_col["Equipo_ID"] == eq_id) & (df_col["Activa"] == "SI")
