@@ -1586,7 +1586,13 @@ def vista_admin(client, drive):
 
             # ── Lista de pedidos ──────────────────────────────────────────────
             for _, p in df_show.iterrows():
-                estado = p.get("Estado", "PENDIENTE")
+                # Limpiar estado por si tiene crosssell contaminado (pedidos viejos)
+                estado_raw = str(p.get("Estado", "PENDIENTE") or "PENDIENTE")
+                estado = estado_raw.split(" ")[0].strip() if " " in estado_raw else estado_raw
+                # Si el crosssell está en Estado (bug previo), moverlo a notas_raw
+                extra_en_estado = ""
+                if "crosssell:" in estado_raw:
+                    extra_en_estado = "crosssell:" + estado_raw.split("crosssell:")[1]
                 color_estado = {
                     "PAGADO": "#00C853", "PENDIENTE": "#FFB800",
                     "PRODUCCION": "#4488FF", "ENVIADO": "#2D6A4F",
@@ -1602,8 +1608,10 @@ def vista_admin(client, drive):
                 except:
                     prods_str = str(p.get("Productos_JSON", ""))
 
-                # Parsear crosssell extras de Notas
+                # Parsear crosssell extras — buscar en Notas o en Estado (pedidos viejos con bug)
                 notas_raw = str(p.get("Notas", "") or "")
+                if not "crosssell:" in notas_raw and extra_en_estado:
+                    notas_raw = extra_en_estado
                 notas_limpias = notas_raw.split("crosssell:")[0].strip() if "crosssell:" in notas_raw else notas_raw
                 extras_cs = []
                 if "crosssell:" in notas_raw:
@@ -2280,9 +2288,9 @@ def vista_tienda(client, drive, codigo_equipo):
                         if ws_ped:
                             cell_ped = ws_ped.find(st.session_state.get("pedido_id",""))
                             if cell_ped:
-                                notas_actuales = ws_ped.cell(cell_ped.row, 14).value or ""
-                                ws_ped.update_cell(cell_ped.row, 14,
-                                    notas_actuales + f" crosssell:{extras_json}")
+                                notas_actuales = ws_ped.cell(cell_ped.row, 15).value or ""
+                                ws_ped.update_cell(cell_ped.row, 15,
+                                    (notas_actuales + " " if notas_actuales else "") + f"crosssell:{extras_json}")
                                 st.cache_data.clear()
                     except:
                         pass
