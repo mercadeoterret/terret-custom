@@ -542,50 +542,61 @@ def tiene_pedidos(df_ped, campo, valor):
 
 SHOPIFY_BESTSELLERS_COLLECTION_ID = "483902390497"
 
-def shopify_get_best_sellers(limit=6):
-    """Obtiene productos de la colección Best sellers smart con stock disponible."""
+def shopify_get_best_sellers(limit=250):
+    """Obtiene TODOS los productos de la colección Best sellers smart con stock."""
     if not SHOPIFY_TOKEN:
         return []
     try:
-        # Leer productos de la colección específica
+        headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
+
+        # Paso 1: obtener productos de la colección (sin inventory_quantity aún)
         url = (f"https://{TIENDA_URL}/admin/api/{API_VERSION}"
                f"/collections/{SHOPIFY_BESTSELLERS_COLLECTION_ID}/products.json")
-        headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
-        params = {
-            "limit": limit * 3,  # pedir más por si algunos no tienen stock
-            "fields": "id,title,variants,images,handle",
-        }
-        resp = requests.get(url, headers=headers, params=params, timeout=15)
+        resp = requests.get(url, headers=headers,
+                            params={"limit": 250, "fields": "id,title,images,handle"},
+                            timeout=20)
         if resp.status_code != 200:
             return []
 
-        products = resp.json().get("products", [])
+        productos_base = resp.json().get("products", [])
+        if not productos_base:
+            return []
+
+        # Paso 2: obtener variantes con inventario para cada producto
         resultado = []
-        for prod in products:
-            # Solo variantes con stock > 0
-            variantes_con_stock = []
-            for v in prod.get("variants", []):
-                inv = v.get("inventory_quantity", 0)
-                policy = v.get("inventory_policy", "deny")
-                if inv > 0 or policy == "continue":
-                    variantes_con_stock.append(v)
+        for prod in productos_base:
+            prod_id = prod["id"]
+            url_var = (f"https://{TIENDA_URL}/admin/api/{API_VERSION}"
+                       f"/products/{prod_id}/variants.json")
+            r2 = requests.get(url_var, headers=headers,
+                              params={"limit": 100}, timeout=15)
+            if r2.status_code != 200:
+                continue
+
+            variantes = r2.json().get("variants", [])
+            variantes_con_stock = [
+                v for v in variantes
+                if v.get("inventory_quantity", 0) > 0
+                or v.get("inventory_policy", "deny") == "continue"
+            ]
             if not variantes_con_stock:
                 continue
+
             imagen = ""
             imgs = prod.get("images", [])
             if imgs:
                 imagen = imgs[0].get("src", "")
+
             precio_min = min(float(v["price"]) for v in variantes_con_stock)
             resultado.append({
-                "id":        prod["id"],
+                "id":        prod_id,
                 "titulo":    prod["title"],
                 "handle":    prod["handle"],
                 "imagen":    imagen,
                 "precio":    precio_min,
                 "variantes": variantes_con_stock,
             })
-            if len(resultado) >= limit:
-                break
+
         return resultado
     except Exception as e:
         return []
@@ -1939,8 +1950,9 @@ def vista_tienda(client, drive, codigo_equipo):
 
         # Cargar best sellers con cache
         if "crosssell_products" not in st.session_state:
-            with st.spinner("Cargando productos…"):
-                st.session_state.crosssell_products = shopify_get_best_sellers(limit=6)
+            with st.spinner("Cargando productos de Térret…"):
+                st.session_state.crosssell_products = shopify_get_best_sellers()
+            st.session_state.cs_mostrar = 6
 
         productos_cs = st.session_state.get("crosssell_products", [])
         crosssell_cart = st.session_state.get("crosssell_cart", [])
@@ -1952,8 +1964,14 @@ def vista_tienda(client, drive, codigo_equipo):
                 unsafe_allow_html=True,
             )
         else:
+            # Paginación: mostrar de 6 en 6
+            if "cs_mostrar" not in st.session_state:
+                st.session_state.cs_mostrar = 6
+            mostrar = st.session_state.cs_mostrar
+            productos_visibles = productos_cs[:mostrar]
+
             cols_cs = st.columns(3)
-            for i, prod in enumerate(productos_cs):
+            for i, prod in enumerate(productos_visibles):
                 with cols_cs[i % 3]:
                     img_cs = (
                         f"<img src='{prod['imagen']}' style='width:100%;display:block;"
@@ -2006,6 +2024,19 @@ def vista_tienda(client, drive, codigo_equipo):
                             })
                             st.session_state.crosssell_cart = crosssell_cart
                             st.rerun()
+
+            # Botón ver más
+            if mostrar < len(productos_cs):
+                faltan = len(productos_cs) - mostrar
+                if st.button(f"VER MÁS ({faltan} productos)", key="btn_cs_ver_mas"):
+                    st.session_state.cs_mostrar = mostrar + 6
+                    st.rerun()
+            elif len(productos_cs) > 6:
+                st.markdown(
+                    "<div style='font-size:11px;color:#333;text-align:center;"
+                    "padding:8px 0;'>Todos los productos mostrados</div>",
+                    unsafe_allow_html=True,
+                )
 
         # Resumen cross-sell
         if crosssell_cart:
@@ -2065,11 +2096,13 @@ def vista_tienda(client, drive, codigo_equipo):
                         st.stop()
                 st.session_state.shop_step = "confirmed"
                 st.session_state.pop("crosssell_products", None)
+                st.session_state.pop("cs_mostrar", None)
                 st.rerun()
         with b2:
             if st.button("SALTAR", key="btn_cs_skip"):
                 st.session_state.shop_step = "confirmed"
                 st.session_state.pop("crosssell_products", None)
+                st.session_state.pop("cs_mostrar", None)
                 st.rerun()
 
     elif step == "confirmed":
