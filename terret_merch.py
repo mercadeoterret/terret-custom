@@ -20,6 +20,7 @@ Drive:
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -1860,9 +1861,18 @@ def vista_tienda(client, drive, codigo_equipo):
                     (df_pro["Coleccion_ID"] == col_id) & (df_pro["Activo"] == "SI")
                 ]
 
-            # Countdown dinámico en JS
+            # Header de colección
+            st.markdown(
+                f"<div style='margin:40px 0 12px 0;padding-bottom:14px;"
+                f"border-bottom:1px solid #1A1A1A;'>"
+                f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
+                f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+            # Countdown dinámico con components.html
             if col_corte:
-                # Parsear la fecha de corte (formato DD/MM/YYYY)
                 try:
                     partes = col_corte.strip().split("/")
                     if len(partes) == 3:
@@ -1871,70 +1881,47 @@ def vista_tienda(client, drive, codigo_equipo):
                         fecha_iso = col_corte
                 except:
                     fecha_iso = col_corte
+
                 countdown_id = f"cd_{col_id.replace('-','')}"
-                corte_html = (
-                    f"<div style='margin-top:12px;margin-bottom:4px;'>"
-                    f"<div style='font-size:9px;color:#555;letter-spacing:2px;"
-                    f"margin-bottom:8px;font-family:DM Mono,monospace;'>CIERRE DE PEDIDOS</div>"
-                    f"<div id='{countdown_id}' style='display:flex;gap:12px;align-items:flex-end;'>"
-                    f"<div style='text-align:center;'>"
-                    f"<div id='{countdown_id}_d' style='font-family:Bebas Neue,sans-serif;"
-                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>DÍAS</div></div>"
-                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                    f"<div style='text-align:center;'>"
-                    f"<div id='{countdown_id}_h' style='font-family:Bebas Neue,sans-serif;"
-                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>HRS</div></div>"
-                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                    f"<div style='text-align:center;'>"
-                    f"<div id='{countdown_id}_m' style='font-family:Bebas Neue,sans-serif;"
-                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>MIN</div></div>"
-                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                    f"<div style='text-align:center;'>"
-                    f"<div id='{countdown_id}_s' style='font-family:Bebas Neue,sans-serif;"
-                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>SEG</div></div>"
-                    f"</div>"
-                    f"<script>"
-                    f"setTimeout(function(){{"
-                    f"var target = new Date('{fecha_iso}').getTime();"
-                    f"function tick(){{"
-                    f"var now = new Date().getTime();"
-                    f"var diff = target - now;"
-                    f"if(diff <= 0){{"
-                    f"document.getElementById('{countdown_id}_d').innerText='00';"
-                    f"document.getElementById('{countdown_id}_h').innerText='00';"
-                    f"document.getElementById('{countdown_id}_m').innerText='00';"
-                    f"document.getElementById('{countdown_id}_s').innerText='00';"
-                    f"return;}}"
-                    f"var d=Math.floor(diff/86400000);"
-                    f"var h=Math.floor((diff%86400000)/3600000);"
-                    f"var m=Math.floor((diff%3600000)/60000);"
-                    f"var s=Math.floor((diff%60000)/1000);"
-                    f"document.getElementById('{countdown_id}_d').innerText=String(d).padStart(2,'0');"
-                    f"document.getElementById('{countdown_id}_h').innerText=String(h).padStart(2,'0');"
-                    f"document.getElementById('{countdown_id}_m').innerText=String(m).padStart(2,'0');"
-                    f"document.getElementById('{countdown_id}_s').innerText=String(s).padStart(2,'0');"
-                    f"}}"
-                    f"tick(); setInterval(tick, 1000);"
-                    f"}}, 300);"
-                    f"</script>"
-                    f"</div>"
-                )
-            else:
-                corte_html = ""
-
-            st.markdown(
-                f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
-                f"border-bottom:1px solid #1A1A1A;'>"
-                f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
-                f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
-                f"{corte_html}</div>",
-                unsafe_allow_html=True,
-            )
-
+                components.html(f"""
+<style>
+  body {{ margin:0; background:transparent; }}
+  .cd-wrap {{ display:flex; gap:16px; align-items:flex-end; font-family:'Bebas Neue',sans-serif; }}
+  .cd-unit {{ text-align:center; }}
+  .cd-num {{ font-size:36px; color:#FFB800; line-height:1; min-width:44px; }}
+  .cd-label {{ font-size:8px; color:#555; letter-spacing:2px; margin-top:4px; font-family:monospace; }}
+  .cd-sep {{ font-size:24px; color:#333; padding-bottom:10px; }}
+  .cd-title {{ font-size:9px; color:#555; letter-spacing:2px; margin-bottom:10px;
+               font-family:monospace; text-transform:uppercase; }}
+</style>
+<div class="cd-title">Cierre de pedidos</div>
+<div class="cd-wrap">
+  <div class="cd-unit"><div class="cd-num" id="d{countdown_id}">--</div><div class="cd-label">DÍAS</div></div>
+  <div class="cd-sep">:</div>
+  <div class="cd-unit"><div class="cd-num" id="h{countdown_id}">--</div><div class="cd-label">HRS</div></div>
+  <div class="cd-sep">:</div>
+  <div class="cd-unit"><div class="cd-num" id="m{countdown_id}">--</div><div class="cd-label">MIN</div></div>
+  <div class="cd-sep">:</div>
+  <div class="cd-unit"><div class="cd-num" id="s{countdown_id}">--</div><div class="cd-label">SEG</div></div>
+</div>
+<script>
+  var target = new Date("{fecha_iso}").getTime();
+  function tick() {{
+    var diff = target - new Date().getTime();
+    if (diff < 0) diff = 0;
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    document.getElementById("d{countdown_id}").innerText = String(d).padStart(2,"0");
+    document.getElementById("h{countdown_id}").innerText = String(h).padStart(2,"0");
+    document.getElementById("m{countdown_id}").innerText = String(m).padStart(2,"0");
+    document.getElementById("s{countdown_id}").innerText = String(s).padStart(2,"0");
+  }}
+  tick();
+  setInterval(tick, 1000);
+</script>
+""", height=80)
             if productos.empty:
                 st.markdown(
                     "<div style='color:#555;font-size:13px;padding:20px 0;'>"
