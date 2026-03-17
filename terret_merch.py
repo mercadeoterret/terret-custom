@@ -1898,7 +1898,7 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>SEG</div></div>"
                     f"</div>"
                     f"<script>"
-                    f"(function(){{"
+                    f"setTimeout(function(){{"
                     f"var target = new Date('{fecha_iso}').getTime();"
                     f"function tick(){{"
                     f"var now = new Date().getTime();"
@@ -1919,7 +1919,7 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"document.getElementById('{countdown_id}_s').innerText=String(s).padStart(2,'0');"
                     f"}}"
                     f"tick(); setInterval(tick, 1000);"
-                    f"}})();"
+                    f"}}, 300);"
                     f"</script>"
                     f"</div>"
                 )
