@@ -540,61 +540,87 @@ def tiene_pedidos(df_ped, campo, valor):
 
 
 
-SHOPIFY_BESTSELLERS_COLLECTION_ID = "483902390497"
+SHOPIFY_BESTSELLERS_COLLECTION_ID = "gid://shopify/Collection/483902390497"
 
-def shopify_get_best_sellers(limit=250):
-    """Obtiene TODOS los productos de la colección Best sellers smart con stock."""
+@st.cache_data(ttl=300)
+def shopify_get_best_sellers():
+    """Una sola llamada GraphQL — trae productos + variantes + inventario juntos."""
     if not SHOPIFY_TOKEN:
         return []
     try:
-        headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
+        url = f"https://{TIENDA_URL}/admin/api/{API_VERSION}/graphql.json"
+        headers = {
+            "X-Shopify-Access-Token": SHOPIFY_TOKEN,
+            "Content-Type": "application/json",
+        }
+        query = """
+{
+  collection(id: "%s") {
+    products(first: 50) {
+      nodes {
+        id
+        title
+        handle
+        featuredImage { url }
+        variants(first: 30) {
+          nodes {
+            id
+            title
+            price
+            inventoryQuantity
+            inventoryPolicy
+          }
+        }
+      }
+    }
+  }
+}
+""" % SHOPIFY_BESTSELLERS_COLLECTION_ID
 
-        # Paso 1: obtener productos de la colección (sin inventory_quantity aún)
-        url = (f"https://{TIENDA_URL}/admin/api/{API_VERSION}"
-               f"/collections/{SHOPIFY_BESTSELLERS_COLLECTION_ID}/products.json")
-        resp = requests.get(url, headers=headers,
-                            params={"limit": 250, "fields": "id,title,images,handle"},
-                            timeout=20)
+        resp = requests.post(url, headers=headers,
+                             json={"query": query}, timeout=20)
         if resp.status_code != 200:
             return []
 
-        productos_base = resp.json().get("products", [])
-        if not productos_base:
+        col = resp.json().get("data", {}).get("collection")
+        if not col:
             return []
 
-        # Paso 2: obtener variantes con inventario para cada producto
         resultado = []
-        for prod in productos_base:
-            prod_id = prod["id"]
-            url_var = (f"https://{TIENDA_URL}/admin/api/{API_VERSION}"
-                       f"/products/{prod_id}/variants.json")
-            r2 = requests.get(url_var, headers=headers,
-                              params={"limit": 100}, timeout=15)
-            if r2.status_code != 200:
-                continue
-
-            variantes = r2.json().get("variants", [])
+        for prod in col["products"]["nodes"]:
             variantes_con_stock = [
-                v for v in variantes
-                if v.get("inventory_quantity", 0) > 0
-                or v.get("inventory_policy", "deny") == "continue"
+                v for v in prod["variants"]["nodes"]
+                if v["inventoryQuantity"] > 0 or v["inventoryPolicy"] == "CONTINUE"
             ]
             if not variantes_con_stock:
                 continue
 
-            imagen = ""
-            imgs = prod.get("images", [])
-            if imgs:
-                imagen = imgs[0].get("src", "")
+            # Convertir variant GID a numeric ID para Draft Orders
+            variantes_formateadas = []
+            for v in variantes_con_stock:
+                numeric_id = int(v["id"].split("/")[-1])
+                variantes_formateadas.append({
+                    "id":                 v["id"],
+                    "numeric_id":         numeric_id,
+                    "title":              v["title"],
+                    "price":              v["price"],
+                    "inventoryQuantity":  v["inventoryQuantity"],
+                    "inventoryPolicy":    v["inventoryPolicy"],
+                })
 
-            precio_min = min(float(v["price"]) for v in variantes_con_stock)
+            imagen = ""
+            fi = prod.get("featuredImage")
+            if fi:
+                imagen = fi.get("url", "")
+
+            precio_min = min(float(v["price"]) for v in variantes_formateadas)
             resultado.append({
-                "id":        prod_id,
+                "id":        int(prod["id"].split("/")[-1]),
                 "titulo":    prod["title"],
                 "handle":    prod["handle"],
                 "imagen":    imagen,
                 "precio":    precio_min,
-                "variantes": variantes_con_stock,
+                "variantes": variantes_formateadas,
             })
 
         return resultado
@@ -623,7 +649,7 @@ def shopify_agregar_a_draft(draft_id, nuevos_items):
         # Agregar nuevos line items con variant_id real
         for item in nuevos_items:
             line_items_actuales.append({
-                "variant_id": item["variant_id"],
+                "variant_id": item.get("numeric_id", item["variant_id"]),
                 "quantity":   item["cantidad"],
             })
 
@@ -745,10 +771,19 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
     }
 
     try:
-        resp = requests.post(url, headers=headers, json=payload, timeout=20)
-        if resp.status_code == 201:
-            return resp.json()["draft_order"], None
-        return None, f"Error Shopify {resp.status_code}: {resp.text}"
+        ultimo_error = ""
+        for intento in range(3):
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=25)
+                if resp.status_code == 201:
+                    return resp.json()["draft_order"], None
+                return None, f"Error Shopify {resp.status_code}: {resp.text}"
+            except requests.exceptions.Timeout:
+                ultimo_error = "Timeout"
+                continue
+            except Exception as e:
+                return None, str(e)
+        return None, "Timeout conectando con Shopify. Intenta de nuevo."
     except Exception as e:
         return None, str(e)
 
@@ -1948,13 +1983,11 @@ def vista_tienda(client, drive, codigo_equipo):
             unsafe_allow_html=True,
         )
 
-        # Cargar best sellers con cache
-        if "crosssell_products" not in st.session_state:
-            with st.spinner("Cargando productos de Térret…"):
-                st.session_state.crosssell_products = shopify_get_best_sellers()
+        # Cargar best sellers (cacheado 5 min por st.cache_data)
+        if "cs_mostrar" not in st.session_state:
             st.session_state.cs_mostrar = 6
-
-        productos_cs = st.session_state.get("crosssell_products", [])
+        with st.spinner("Cargando productos de Térret…"):
+            productos_cs = shopify_get_best_sellers()
         crosssell_cart = st.session_state.get("crosssell_cart", [])
 
         if not productos_cs:
@@ -2005,7 +2038,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         # Selector de variante
                         variantes = prod["variantes"]
                         opciones_v = {
-                            f"{v.get('title','Única')} — {fmt_precio(v['price'])} ({v.get('inventory_quantity',0)} disp.)": v["id"]
+                            f"{v.get('title','Única')} — {fmt_precio(v['price'])}": v["numeric_id"]
                             for v in variantes
                         }
                         sel_v = st.selectbox(
@@ -2017,7 +2050,7 @@ def vista_tienda(client, drive, codigo_equipo):
                             crosssell_cart.append({
                                 "prod_id":    prod["id"],
                                 "nombre":     prod["titulo"],
-                                "variant_id": opciones_v[sel_v],
+                                "variant_id": opciones_v[sel_v],  # numeric id
                                 "cantidad":   1,
                                 "precio":     prod["precio"],
                                 "imagen":     prod["imagen"],
