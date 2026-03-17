@@ -1512,38 +1512,10 @@ def vista_tienda(client, drive, codigo_equipo):
                                 unsafe_allow_html=True,
                             )
 
-                        # Tallas toggle
-                        if tallas:
-                            st.markdown(
-                                "<div style='font-size:11px;color:#666;letter-spacing:2px;"
-                                "margin-bottom:8px;'>TALLA</div>",
-                                unsafe_allow_html=True,
-                            )
-                            talla_key = f"talla_sel_{prod['ID']}"
-                            if talla_key not in st.session_state:
-                                st.session_state[talla_key] = tallas[0]
-                            n_cols = min(len(tallas), 6)
-                            talla_cols = st.columns(n_cols)
-                            for ti, t in enumerate(tallas):
-                                with talla_cols[ti % n_cols]:
-                                    selected = st.session_state[talla_key] == t
-                                    btn_style = (
-                                        f"background:{eq_color};color:#0A0A0A;"
-                                        if selected else
-                                        "background:#222;color:#F5F0E8;"
-                                    )
-                                    st.markdown(
-                                        f"<div style='{btn_style}font-family:DM Mono,monospace;"
-                                        f"font-size:12px;text-align:center;padding:8px 4px;"
-                                        f"border-radius:3px;margin-bottom:4px;'>{t}</div>",
-                                        unsafe_allow_html=True,
-                                    )
-                                    if st.button(t, key=f"tbtn_{prod['ID']}_{t}"):
-                                        st.session_state[talla_key] = t
-                                        st.rerun()
-                            talla_sel = st.session_state[talla_key]
-                        else:
-                            talla_sel = ""
+                        # Tallas desplegable
+                        talla_sel = st.selectbox(
+                            "Talla", tallas, key=f"talla_sel_{prod['ID']}"
+                        ) if tallas else ""
 
                         cant = st.number_input("Cantidad", min_value=1, max_value=20,
                                                value=1, key=f"cant_{prod_key}")
