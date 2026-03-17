@@ -1467,37 +1467,26 @@ def vista_tienda(client, drive, codigo_equipo):
                     st.session_state.modal_prod_id = prod["ID"]
                     st.rerun()
 
-        # ── Modal de producto ──────────────────────────────────────────────────
-        if st.session_state.modal_prod_id:
+        # ── Modal de producto con st.dialog ───────────────────────────────────
+        if st.session_state.get("modal_prod_id"):
             prod_modal = productos[productos["ID"] == st.session_state.modal_prod_id]
             if not prod_modal.empty:
-                prod = prod_modal.iloc[0]
-                precio    = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
-                tallas    = [t.strip() for t in str(prod.get("Tallas", "")).split(",") if t.strip()]
-                fotos_raw = str(prod.get("Fotos_URLs", "") or "")
-                fotos     = [u.strip() for u in fotos_raw.split(",") if u.strip()]
-                desc      = str(prod.get("Descripcion", "") or "")
-                es_personalizable = str(prod.get("Personalizable", "NO")).upper() == "SI"
-                prod_key  = f"modal_{prod['ID']}"
+                prod_data = prod_modal.iloc[0]
 
-                # Overlay oscuro
-                st.markdown(
-                    "<div style='position:fixed;top:0;left:0;width:100vw;height:100vh;"
-                    "background:rgba(0,0,0,0.75);z-index:999;'></div>",
-                    unsafe_allow_html=True,
-                )
-                # Panel modal
-                with st.container():
+                @st.dialog(prod_data.get("Nombre", "Producto"), width="large")
+                def mostrar_modal_producto():
+                    prod      = prod_data
+                    precio    = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
+                    tallas    = [t.strip() for t in str(prod.get("Tallas", "")).split(",") if t.strip()]
+                    fotos_raw = str(prod.get("Fotos_URLs", "") or "")
+                    fotos     = [u.strip() for u in fotos_raw.split(",") if u.strip()]
+                    desc      = str(prod.get("Descripcion", "") or "")
+                    es_personalizable = str(prod.get("Personalizable", "NO")).upper() == "SI"
+                    prod_key  = f"modal_{prod['ID']}"
+
                     st.markdown(
-                        f"<div style='background:#111;border:1px solid #333;"
-                        f"border-radius:8px;padding:28px;margin:0 auto;"
-                        f"max-width:700px;position:relative;z-index:1000;'>"
-                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:24px;"
-                        f"letter-spacing:3px;color:{eq_color};margin-bottom:4px;'>"
-                        f"{prod.get('Nombre','').upper()}</div>"
                         f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-                        f"color:#F5F0E8;margin-bottom:16px;'>{fmt_precio(precio)}</div>"
-                        f"</div>",
+                        f"color:{eq_color};margin-bottom:4px;'>{fmt_precio(precio)}</div>",
                         unsafe_allow_html=True,
                     )
 
@@ -1523,7 +1512,7 @@ def vista_tienda(client, drive, codigo_equipo):
                                 unsafe_allow_html=True,
                             )
 
-                        # Tallas como botones toggle
+                        # Tallas toggle
                         if tallas:
                             st.markdown(
                                 "<div style='font-size:11px;color:#666;letter-spacing:2px;"
@@ -1533,9 +1522,10 @@ def vista_tienda(client, drive, codigo_equipo):
                             talla_key = f"talla_sel_{prod['ID']}"
                             if talla_key not in st.session_state:
                                 st.session_state[talla_key] = tallas[0]
-                            talla_cols = st.columns(len(tallas))
+                            n_cols = min(len(tallas), 6)
+                            talla_cols = st.columns(n_cols)
                             for ti, t in enumerate(tallas):
-                                with talla_cols[ti]:
+                                with talla_cols[ti % n_cols]:
                                     selected = st.session_state[talla_key] == t
                                     btn_style = (
                                         f"background:{eq_color};color:#0A0A0A;"
@@ -1545,7 +1535,7 @@ def vista_tienda(client, drive, codigo_equipo):
                                     st.markdown(
                                         f"<div style='{btn_style}font-family:DM Mono,monospace;"
                                         f"font-size:12px;text-align:center;padding:8px 4px;"
-                                        f"border-radius:3px;cursor:pointer;'>{t}</div>",
+                                        f"border-radius:3px;margin-bottom:4px;'>{t}</div>",
                                         unsafe_allow_html=True,
                                     )
                                     if st.button(t, key=f"tbtn_{prod['ID']}_{t}"):
@@ -1555,23 +1545,19 @@ def vista_tienda(client, drive, codigo_equipo):
                         else:
                             talla_sel = ""
 
-                        # Cantidad
-                        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
                         cant = st.number_input("Cantidad", min_value=1, max_value=20,
                                                value=1, key=f"cant_{prod_key}")
 
-                        # Nombre personalizable
                         nombre_camiseta = ""
                         if es_personalizable:
-                            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
                             nombre_camiseta = st.text_input(
                                 "Nombre en la camiseta (opcional, máx. 20 caracteres)",
                                 max_chars=20, key=f"nombre_cam_{prod_key}",
                                 placeholder="Ej: CARLOS",
                             )
 
-                        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-                        if st.button("🛒 AGREGAR AL CARRITO", key=f"add_{prod_key}"):
+                        if st.button("🛒 AGREGAR AL CARRITO", key=f"add_{prod_key}",
+                                     use_container_width=True):
                             st.session_state.carrito.append({
                                 "prod_id":          prod["ID"],
                                 "nombre":           prod["Nombre"],
@@ -1586,9 +1572,7 @@ def vista_tienda(client, drive, codigo_equipo):
                             st.session_state.modal_prod_id = None
                             st.rerun()
 
-                        if st.button("✕ CERRAR", key=f"close_{prod_key}"):
-                            st.session_state.modal_prod_id = None
-                            st.rerun()
+                mostrar_modal_producto()
 
     # ── CARRITO ───────────────────────────────────────────────────────────────
     if st.session_state.carrito:
