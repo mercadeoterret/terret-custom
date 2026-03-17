@@ -1925,22 +1925,23 @@ def vista_tienda(client, drive, codigo_equipo):
             )
         else:
             corte_html = ""
+
+        st.markdown(
+            f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
+            f"border-bottom:1px solid #1A1A1A;'>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
+            f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
+            f"{corte_html}</div>",
+            unsafe_allow_html=True,
+        )
+
+        if productos.empty:
             st.markdown(
-                f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
-                f"border-bottom:1px solid #1A1A1A;'>"
-                f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
-                f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
-                f"{corte_html}</div>",
+                "<div style='color:#555;font-size:13px;padding:20px 0;'>"
+                "Sin productos en esta colección aún.</div>",
                 unsafe_allow_html=True,
             )
-
-            if productos.empty:
-                st.markdown(
-                    "<div style='color:#555;font-size:13px;padding:20px 0;'>"
-                    "Sin productos en esta colección aún.</div>",
-                    unsafe_allow_html=True,
-                )
-                continue
+            continue
 
             # Inicializar modal state
             if "modal_prod_id" not in st.session_state:
