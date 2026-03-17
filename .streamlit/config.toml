@@ -1,20 +1,20 @@
 [theme]
-base = "dark"
-primaryColor = "#FFFFFF"
-backgroundColor = "#0A0A0A"
-secondaryBackgroundColor = "#111111"
-textColor = "#FFFFFF"
+base = "light"
+primaryColor = "#0A0A0A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F5F5"
+textColor = "#0A0A0A"
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
 headingFont = "Bebas Neue:https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
 codeFont = "DM Mono:https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap"
-borderColor = "#1E1E1E"
+borderColor = "#E0E0E0"
 showWidgetBorder = false
 baseRadius = "none"
 buttonRadius = "2px"
 
 [theme.sidebar]
-backgroundColor = "#0D0D0D"
-secondaryBackgroundColor = "#161616"
+backgroundColor = "#F8F8F8"
+secondaryBackgroundColor = "#EFEFEF"
 
 [browser]
 gatherUsageStats = false
