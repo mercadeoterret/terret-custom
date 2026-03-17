@@ -373,7 +373,7 @@ def leer_pedidos(_client):
                  "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas", "Crosssell_JSON"])
+    data = ws.get_all_records()
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID",
                  "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email",
@@ -1714,10 +1714,10 @@ def vista_admin(client, drive):
                                 cs_json = notas_v.split("crosssell:")[1].strip()
                             elif "crosssell:" in str(p.get("Estado", "")):
                                 cs_json = str(p.get("Estado","")).split("crosssell:")[1].strip()
-                        if cs_json:
-                            extras = json.loads(cs_json)
-                        else:
-                            extras = []
+                        # Strip prefix if present
+                        if cs_json.startswith("crosssell:"):
+                            cs_json = cs_json[len("crosssell:"):]
+                        extras = json.loads(cs_json) if cs_json.strip() else []
                         if extras:
                             for ex in extras:
                                 filas.append({
