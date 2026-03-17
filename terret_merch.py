@@ -538,6 +538,92 @@ def tiene_pedidos(df_ped, campo, valor):
         return False
     return not df_ped[df_ped[campo] == valor].empty
 
+
+
+def shopify_get_best_sellers(limit=6):
+    """Obtiene productos de Shopify ordenados por ventas con stock disponible."""
+    if not SHOPIFY_TOKEN:
+        return []
+    try:
+        # Obtener productos con inventario disponible
+        url = f"https://{TIENDA_URL}/admin/api/{API_VERSION}/products.json"
+        headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
+        params = {
+            "limit": 24,
+            "status": "active",
+            "published_status": "published",
+            "fields": "id,title,variants,images,handle",
+        }
+        resp = requests.get(url, headers=headers, params=params, timeout=15)
+        if resp.status_code != 200:
+            return []
+
+        products = resp.json().get("products", [])
+        resultado = []
+        for prod in products:
+            # Filtrar variantes con stock > 0
+            variantes_con_stock = []
+            for v in prod.get("variants", []):
+                inv = v.get("inventory_quantity", 0)
+                policy = v.get("inventory_policy", "deny")
+                if inv > 0 or policy == "continue":
+                    variantes_con_stock.append(v)
+            if not variantes_con_stock:
+                continue
+            imagen = ""
+            imgs = prod.get("images", [])
+            if imgs:
+                imagen = imgs[0].get("src", "")
+            # Precio mínimo disponible
+            precio_min = min(float(v["price"]) for v in variantes_con_stock)
+            resultado.append({
+                "id":              prod["id"],
+                "titulo":          prod["title"],
+                "handle":          prod["handle"],
+                "imagen":          imagen,
+                "precio":          precio_min,
+                "variantes":       variantes_con_stock,
+            })
+            if len(resultado) >= limit:
+                break
+        return resultado
+    except Exception as e:
+        return []
+
+
+def shopify_agregar_a_draft(draft_id, nuevos_items):
+    """Agrega line items a una Draft Order existente."""
+    if not SHOPIFY_TOKEN or not draft_id:
+        return False, "Sin token o draft_id"
+    try:
+        # Obtener draft actual
+        url = f"https://{TIENDA_URL}/admin/api/{API_VERSION}/draft_orders/{draft_id}.json"
+        headers = {
+            "X-Shopify-Access-Token": SHOPIFY_TOKEN,
+            "Content-Type": "application/json",
+        }
+        resp = requests.get(url, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            return False, f"Error obteniendo draft: {resp.status_code}"
+
+        draft = resp.json()["draft_order"]
+        line_items_actuales = draft.get("line_items", [])
+
+        # Agregar nuevos line items con variant_id real
+        for item in nuevos_items:
+            line_items_actuales.append({
+                "variant_id": item["variant_id"],
+                "quantity":   item["cantidad"],
+            })
+
+        payload = {"draft_order": {"line_items": line_items_actuales}}
+        resp2 = requests.put(url, headers=headers, json=payload, timeout=15)
+        if resp2.status_code == 200:
+            return True, resp2.json()["draft_order"]
+        return False, f"Error actualizando draft: {resp2.text}"
+    except Exception as e:
+        return False, str(e)
+
 # ─── SINCRONIZACIÓN DE PAGOS ─────────────────────────────────────────────────
 def sincronizar_pagos(client):
     """
@@ -610,7 +696,7 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
 
     line_items = []
     for item in items:
-        line_items.append({
+        li = {
             "title":    item["nombre"],
             "price":    str(item["precio"]),
             "quantity": item["cantidad"],
@@ -623,7 +709,13 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
                 {"name": "Colección",         "value": coleccion_nombre},
                 {"name": "Nombre camiseta",   "value": item.get("nombre_camiseta", "")},
             ],
-        })
+        }
+        # Agregar imagen si existe
+        foto_url = item.get("foto_url", "")
+        if foto_url:
+            li["applied_discount"] = None  # placeholder
+            li["image"] = {"src": foto_url}
+        line_items.append(li)
 
     nombre_parts = usuario_nombre.split()
     payload = {
@@ -1436,6 +1528,7 @@ def vista_admin(client, drive):
                             "Coleccion":         p.get("Coleccion_Nombre", ""),
                             "Usuario_Nombre":    p.get("Usuario_Nombre", ""),
                             "Usuario_Email":     p.get("Usuario_Email", ""),
+                            "Tipo":              "MERCH",
                             "Producto":          pr.get("nombre", ""),
                             "Talla":             pr.get("talla", ""),
                             "Cantidad":          pr.get("cantidad", ""),
@@ -1447,6 +1540,33 @@ def vista_admin(client, drive):
                             "Shopify_Order_ID":  p.get("Shopify_Order_ID", ""),
                             "Shopify_Draft_ID":  p.get("Shopify_Draft_ID", ""),
                         })
+                    # Productos de cross-selling (guardados en Notas como JSON)
+                    try:
+                        notas = str(p.get("Notas", ""))
+                        if "crosssell:" in notas:
+                            extras = json.loads(notas.split("crosssell:")[1])
+                            for ex in extras:
+                                filas.append({
+                                    "Fecha":             p.get("Fecha", ""),
+                                    "Pedido_ID":         p.get("ID", ""),
+                                    "Equipo":            p.get("Equipo_Nombre", ""),
+                                    "Coleccion":         p.get("Coleccion_Nombre", ""),
+                                    "Usuario_Nombre":    p.get("Usuario_Nombre", ""),
+                                    "Usuario_Email":     p.get("Usuario_Email", ""),
+                                    "Tipo":              "CROSS-SELL",
+                                    "Producto":          ex.get("nombre", ""),
+                                    "Talla":             ex.get("variante", ""),
+                                    "Cantidad":          ex.get("cantidad", 1),
+                                    "Nombre_Camiseta":   "",
+                                    "Precio_Unitario":   ex.get("precio", ""),
+                                    "Subtotal":          ex.get("precio", 0),
+                                    "Total_Pedido":      p.get("Total", ""),
+                                    "Estado":            p.get("Estado", ""),
+                                    "Shopify_Order_ID":  p.get("Shopify_Order_ID", ""),
+                                    "Shopify_Draft_ID":  p.get("Shopify_Draft_ID", ""),
+                                })
+                    except:
+                        pass
 
                 df_reporte = pd.DataFrame(filas)
                 csv = df_reporte.to_csv(index=False).encode("utf-8")
@@ -1773,10 +1893,12 @@ def vista_tienda(client, drive, codigo_equipo):
                             guardar_pedido(client, pedido_data)
                             checkout_url = draft.get("invoice_url", "")
                             if checkout_url:
-                                st.session_state.carrito    = []
-                                st.session_state.shop_step  = "confirmed"
-                                st.session_state["checkout_url"] = checkout_url
-                                st.session_state["pedido_id"]    = pedido_id
+                                st.session_state.carrito          = []
+                                st.session_state.shop_step        = "crosssell"
+                                st.session_state["checkout_url"]  = checkout_url
+                                st.session_state["pedido_id"]     = pedido_id
+                                st.session_state["draft_id"]      = draft["id"]
+                                st.session_state["crosssell_cart"] = []
                                 st.rerun()
                             else:
                                 st.warning("Pedido registrado sin link de pago. Contacta a Térret.")
@@ -1798,7 +1920,159 @@ def vista_tienda(client, drive, codigo_equipo):
     # ── CONTENIDO PRINCIPAL según step ────────────────────────────────────────
     step = st.session_state.get("shop_step", "shop")
 
-    if step == "confirmed":
+    if step == "crosssell":
+        checkout_url   = st.session_state.get("checkout_url", "")
+        pedido_id_conf = st.session_state.get("pedido_id", "")
+        draft_id       = st.session_state.get("draft_id", "")
+
+        st.markdown(
+            f"<div style='text-align:center;padding:32px 0 8px 0;'>"
+            f"<div style='font-size:9px;color:#555;letter-spacing:3px;"
+            f"font-family:DM Mono,monospace;margin-bottom:8px;'>TU PEDIDO {pedido_id_conf} ESTÁ LISTO</div>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
+            f"letter-spacing:3px;color:#FFF;margin-bottom:4px;'>ANTES DE PAGAR</div>"
+            f"<div style='font-size:13px;color:#555;margin-bottom:32px;'>"
+            f"Completa tu pedido con estos productos de Térret</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+        # Cargar best sellers con cache
+        if "crosssell_products" not in st.session_state:
+            with st.spinner("Cargando productos…"):
+                st.session_state.crosssell_products = shopify_get_best_sellers(limit=6)
+
+        productos_cs = st.session_state.get("crosssell_products", [])
+        crosssell_cart = st.session_state.get("crosssell_cart", [])
+
+        if not productos_cs:
+            st.markdown(
+                "<div style='text-align:center;color:#333;padding:20px;'>"
+                "No hay productos disponibles en este momento.</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            cols_cs = st.columns(3)
+            for i, prod in enumerate(productos_cs):
+                with cols_cs[i % 3]:
+                    img_cs = (
+                        f"<img src='{prod['imagen']}' style='width:100%;display:block;"
+                        f"border-radius:3px 3px 0 0;aspect-ratio:1/1;object-fit:cover;'>"
+                        if prod["imagen"] else
+                        f"<div style='width:100%;aspect-ratio:1/1;background:#1A1A1A;"
+                        f"border-radius:3px 3px 0 0;'></div>"
+                    )
+                    # Verificar si ya está en crosssell_cart
+                    ya_agregado = any(c["prod_id"] == prod["id"] for c in crosssell_cart)
+                    st.markdown(
+                        f"<div style='background:#0F0F0F;border:1px solid #1A1A1A;"
+                        f"border-radius:3px;overflow:hidden;margin-bottom:8px;'>"
+                        f"{img_cs}"
+                        f"<div style='padding:10px 12px;'>"
+                        f"<div style='font-size:12px;color:#FFF;font-weight:500;"
+                        f"margin-bottom:4px;line-height:1.3;'>{prod['titulo']}</div>"
+                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
+                        f"color:{eq_color};'>{fmt_precio(prod['precio'])}</div>"
+                        f"</div></div>",
+                        unsafe_allow_html=True,
+                    )
+
+                    if ya_agregado:
+                        st.markdown(
+                            "<div style='font-size:11px;color:#00C853;text-align:center;"
+                            "padding:4px 0;letter-spacing:1px;'>✓ AGREGADO</div>",
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        # Selector de variante
+                        variantes = prod["variantes"]
+                        opciones_v = {
+                            f"{v.get('title','Única')} — {fmt_precio(v['price'])} ({v.get('inventory_quantity',0)} disp.)": v["id"]
+                            for v in variantes
+                        }
+                        sel_v = st.selectbox(
+                            "Variante", list(opciones_v.keys()),
+                            key=f"cs_var_{prod['id']}",
+                            label_visibility="collapsed",
+                        )
+                        if st.button("+ AGREGAR", key=f"cs_add_{prod['id']}"):
+                            crosssell_cart.append({
+                                "prod_id":    prod["id"],
+                                "nombre":     prod["titulo"],
+                                "variant_id": opciones_v[sel_v],
+                                "cantidad":   1,
+                                "precio":     prod["precio"],
+                                "imagen":     prod["imagen"],
+                            })
+                            st.session_state.crosssell_cart = crosssell_cart
+                            st.rerun()
+
+        # Resumen cross-sell
+        if crosssell_cart:
+            total_cs = sum(c["precio"] for c in crosssell_cart)
+            st.markdown(
+                f"<div style='background:#111;border:1px solid #1A1A1A;border-radius:3px;"
+                f"padding:14px 18px;margin-top:16px;margin-bottom:8px;'>"
+                f"<div style='font-size:9px;color:#555;letter-spacing:2px;"
+                f"margin-bottom:8px;'>PRODUCTOS EXTRA SELECCIONADOS</div>"
+                + "".join([
+                    f"<div style='display:flex;justify-content:space-between;"
+                    f"font-size:12px;color:#888;padding:3px 0;'>"
+                    f"<span>{c['nombre']}</span>"
+                    f"<span style='color:#FFF;'>{fmt_precio(c['precio'])}</span></div>"
+                    for c in crosssell_cart
+                ])
+                + f"<div style='border-top:1px solid #222;margin-top:8px;padding-top:8px;"
+                f"display:flex;justify-content:space-between;'>"
+                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>EXTRA</span>"
+                f"<span style='font-family:Bebas Neue,sans-serif;font-size:18px;"
+                f"color:{eq_color};'>{fmt_precio(total_cs)}</span></div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+        # Botones de acción
+        b1, b2 = st.columns([3, 1])
+        with b1:
+            btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
+            if st.button(btn_label, key="btn_cs_pagar"):
+                if crosssell_cart and draft_id:
+                    with st.spinner("Actualizando tu pedido…"):
+                        ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
+                    if ok:
+                        new_url = result.get("invoice_url", checkout_url)
+                        st.session_state["checkout_url"] = new_url
+                        # Guardar extras en Sheets via Notas del pedido
+                        try:
+                            extras_json = json.dumps([{
+                                "nombre":   c["nombre"],
+                                "variante": str(c.get("variant_id","")),
+                                "cantidad": c["cantidad"],
+                                "precio":   c["precio"],
+                            } for c in crosssell_cart], ensure_ascii=False)
+                            ws_ped = get_ws(client, HOJA_PEDIDOS)
+                            if ws_ped:
+                                cell_ped = ws_ped.find(st.session_state.get("pedido_id",""))
+                                if cell_ped:
+                                    notas_actuales = ws_ped.cell(cell_ped.row, 14).value or ""
+                                    ws_ped.update_cell(cell_ped.row, 14,
+                                        notas_actuales + f" crosssell:{extras_json}")
+                                    st.cache_data.clear()
+                        except:
+                            pass
+                    else:
+                        st.error(f"Error actualizando pedido: {result}")
+                        st.stop()
+                st.session_state.shop_step = "confirmed"
+                st.session_state.pop("crosssell_products", None)
+                st.rerun()
+        with b2:
+            if st.button("SALTAR", key="btn_cs_skip"):
+                st.session_state.shop_step = "confirmed"
+                st.session_state.pop("crosssell_products", None)
+                st.rerun()
+
+    elif step == "confirmed":
         # Pantalla de confirmación centrada
         checkout_url = st.session_state.get("checkout_url", "")
         pedido_id_conf = st.session_state.get("pedido_id", "")
