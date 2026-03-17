@@ -1730,6 +1730,9 @@ def vista_tienda(client, drive, codigo_equipo):
                                       placeholder="Dirección de envío, etc.", height=70)
 
                 if st.button("CONFIRMAR Y PAGAR →", key="btn_pagar"):
+                    nombre = st.session_state.get("buyer_nombre", "").strip()
+                    email  = st.session_state.get("buyer_email", "").strip()
+                    notas  = st.session_state.get("buyer_notas", "").strip()
                     if not nombre or not email:
                         st.error("Nombre y correo son obligatorios.")
                     elif "@" not in email:
