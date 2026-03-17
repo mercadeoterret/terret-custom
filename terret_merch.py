@@ -1672,12 +1672,12 @@ def vista_admin(client, drive):
 
             # ── Reporte de producción ─────────────────────────────────────────
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            seccion("EXPORTAR REPORTE DE PRODUCCIÓN", "")
+            seccion("REPORTE DE PRODUCCIÓN", "")
 
-            if st.button("📥 GENERAR REPORTE", key="btn_export"):
-                # Expandir productos: una fila por producto por pedido
+            # Construir filas del reporte
+            def build_report_rows(df_source):
                 filas = []
-                for _, p in df_show.iterrows():
+                for _, p in df_source.iterrows():
                     try:
                         prods = json.loads(p.get("Productos_JSON", "[]"))
                     except:
@@ -1685,82 +1685,212 @@ def vista_admin(client, drive):
                     if not prods:
                         prods = [{}]
                     for pr in prods:
+                        precio_u = float(str(pr.get("precio", 0) or 0))
+                        cantidad = int(pr.get("cantidad", 1) or 1)
                         filas.append({
-                            "Fecha":             p.get("Fecha", ""),
-                            "Pedido_ID":         p.get("ID", ""),
-                            "Equipo":            p.get("Equipo_Nombre", ""),
-                            "Coleccion":         p.get("Coleccion_Nombre", ""),
-                            "Usuario_Nombre":    p.get("Usuario_Nombre", ""),
-                            "Usuario_Email":     p.get("Usuario_Email", ""),
-                            "Tipo":              "MERCH",
-                            "Producto":          pr.get("nombre", ""),
-                            "Talla":             pr.get("talla", ""),
-                            "Cantidad":          pr.get("cantidad", ""),
-                            "Nombre_Camiseta":   pr.get("nombre_camiseta", ""),
-                            "Precio_Unitario":   pr.get("precio", ""),
-                            "Subtotal":          float(str(pr.get("precio",0))) * int(pr.get("cantidad",1)) if pr.get("precio") and pr.get("cantidad") else "",
-                            "Total_Pedido":      p.get("Total", ""),
-                            "Estado":            p.get("Estado", ""),
-                            "Shopify_Order_ID":  p.get("Shopify_Order_ID", ""),
-                            "Shopify_Draft_ID":  p.get("Shopify_Draft_ID", ""),
+                            "Pedido_ID":       p.get("ID", ""),
+                            "Fecha":           p.get("Fecha", ""),
+                            "Estado":          p.get("Estado", ""),
+                            "Equipo":          p.get("Equipo_Nombre", ""),
+                            "Coleccion":       p.get("Coleccion_Nombre", ""),
+                            "Cliente":         p.get("Usuario_Nombre", ""),
+                            "Email":           p.get("Usuario_Email", ""),
+                            "Tipo":            "MERCH",
+                            "Producto":        pr.get("nombre", ""),
+                            "Talla":           pr.get("talla", ""),
+                            "Cantidad":        cantidad,
+                            "Nombre_Camiseta": pr.get("nombre_camiseta", ""),
+                            "Precio_Unit":     precio_u,
+                            "Subtotal":        precio_u * cantidad,
+                            "Total_Pedido":    float(str(p.get("Total", 0) or 0)),
+                            "Notas":           str(p.get("Notas", "") or ""),
+                            "Draft_ID":        p.get("Shopify_Draft_ID", ""),
+                            "Order_ID":        p.get("Shopify_Order_ID", ""),
                         })
-                    # Productos de cross-selling (guardados en Notas como JSON)
+                    # Cross-sell
                     try:
                         cs_json = str(p.get("Crosssell_JSON", "") or "")
-                        # Compatibilidad pedidos viejos
                         if not cs_json:
                             notas_v = str(p.get("Notas", "") or "")
                             if "crosssell:" in notas_v:
                                 cs_json = notas_v.split("crosssell:")[1].strip()
                             elif "crosssell:" in str(p.get("Estado", "")):
                                 cs_json = str(p.get("Estado","")).split("crosssell:")[1].strip()
-                        # Strip prefix if present
                         if cs_json.startswith("crosssell:"):
                             cs_json = cs_json[len("crosssell:"):]
                         extras = json.loads(cs_json) if cs_json.strip() else []
-                        if extras:
-                            for ex in extras:
-                                filas.append({
-                                    "Fecha":             p.get("Fecha", ""),
-                                    "Pedido_ID":         p.get("ID", ""),
-                                    "Equipo":            p.get("Equipo_Nombre", ""),
-                                    "Coleccion":         p.get("Coleccion_Nombre", ""),
-                                    "Usuario_Nombre":    p.get("Usuario_Nombre", ""),
-                                    "Usuario_Email":     p.get("Usuario_Email", ""),
-                                    "Tipo":              "CROSS-SELL",
-                                    "Producto":          ex.get("nombre", ""),
-                                    "Talla":             ex.get("variante", ""),
-                                    "Cantidad":          ex.get("cantidad", 1),
-                                    "Nombre_Camiseta":   "",
-                                    "Precio_Unitario":   ex.get("precio", ""),
-                                    "Subtotal":          ex.get("precio", 0),
-                                    "Total_Pedido":      p.get("Total", ""),
-                                    "Estado":            p.get("Estado", ""),
-                                    "Shopify_Order_ID":  p.get("Shopify_Order_ID", ""),
-                                    "Shopify_Draft_ID":  p.get("Shopify_Draft_ID", ""),
-                                })
+                        for ex in extras:
+                            precio_cs = float(str(ex.get("precio", 0) or 0))
+                            filas.append({
+                                "Pedido_ID":       p.get("ID", ""),
+                                "Fecha":           p.get("Fecha", ""),
+                                "Estado":          p.get("Estado", ""),
+                                "Equipo":          p.get("Equipo_Nombre", ""),
+                                "Coleccion":       p.get("Coleccion_Nombre", ""),
+                                "Cliente":         p.get("Usuario_Nombre", ""),
+                                "Email":           p.get("Usuario_Email", ""),
+                                "Tipo":            "CROSS-SELL",
+                                "Producto":        ex.get("nombre", ""),
+                                "Talla":           ex.get("variante", ""),
+                                "Cantidad":        int(ex.get("cantidad", 1) or 1),
+                                "Nombre_Camiseta": "",
+                                "Precio_Unit":     precio_cs,
+                                "Subtotal":        precio_cs * int(ex.get("cantidad", 1) or 1),
+                                "Total_Pedido":    float(str(p.get("Total", 0) or 0)),
+                                "Notas":           "",
+                                "Draft_ID":        p.get("Shopify_Draft_ID", ""),
+                                "Order_ID":        p.get("Shopify_Order_ID", ""),
+                            })
                     except:
                         pass
+                # Agregar número de grupo por pedido
+                pedido_num = {}
+                counter = 0
+                for f in filas:
+                    pid = f["Pedido_ID"]
+                    if pid not in pedido_num:
+                        counter += 1
+                        pedido_num[pid] = counter
+                    f["Grupo"] = pedido_num[pid]
+                return filas
 
-                df_reporte = pd.DataFrame(filas)
-                csv = df_reporte.to_csv(index=False).encode("utf-8")
-                eq_label  = filtro_eq.replace(" ", "_") if filtro_eq != "Todos" else "todos"
-                col_label = filtro_col.replace(" ", "_") if filtro_col != "Todas" else "todas"
-                fname = f"reporte_produccion_{eq_label}_{col_label}_{datetime.now().strftime('%Y%m%d')}.csv"
-                st.download_button(
-                    "⬇️ Descargar CSV de producción",
-                    csv,
-                    fname,
-                    "text/csv",
-                    key="dl_csv",
-                )
+            if "reporte_filas" not in st.session_state:
+                st.session_state.reporte_filas = None
+
+            col_gen, col_dl_csv, col_dl_xlsx = st.columns([2, 1, 1])
+            with col_gen:
+                if st.button("📊 GENERAR REPORTE", key="btn_export"):
+                    st.session_state.reporte_filas = build_report_rows(df_show)
+
+            filas = st.session_state.reporte_filas
+
+            if filas is not None:
+                df_rep = pd.DataFrame(filas)
+                # Ordenar: MERCH primero, luego CROSS-SELL, agrupado por Pedido_ID
+                tipo_order = {"MERCH": 0, "CROSS-SELL": 1}
+                df_rep["_tipo_ord"] = df_rep["Tipo"].map(tipo_order).fillna(2)
+                # Preservar orden original de pedidos (por fecha)
+                pedido_order = {pid: i for i, pid in enumerate(df_rep["Pedido_ID"].unique())}
+                df_rep["_ped_ord"] = df_rep["Pedido_ID"].map(pedido_order)
+                df_rep = df_rep.sort_values(["_ped_ord", "_tipo_ord"]).drop(
+                    columns=["_tipo_ord", "_ped_ord"]
+                ).reset_index(drop=True)
+
+                # ── Métricas rápidas ──────────────────────────────────────────
+                total_merch = df_rep[df_rep["Tipo"] == "MERCH"]["Subtotal"].sum()
+                total_cs    = df_rep[df_rep["Tipo"] == "CROSS-SELL"]["Subtotal"].sum()
+                n_pedidos   = df_rep["Pedido_ID"].nunique()
+                n_items     = df_rep["Cantidad"].sum()
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Pedidos", n_pedidos)
+                m2.metric("Items totales", int(n_items))
+                m3.metric("Merch", fmt_precio(total_merch))
+                m4.metric("Cross-sell", fmt_precio(total_cs))
+
+                # ── Tabla visual del reporte ──────────────────────────────────
+                st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+
+                # Colorear filas por tipo
+                def color_tipo(val):
+                    if val == "CROSS-SELL":
+                        return "background-color: #EEF4FF; color: #2563EB;"
+                    return ""
+
+                df_display = df_rep[[
+                    "Grupo", "Pedido_ID", "Estado", "Cliente", "Tipo",
+                    "Producto", "Talla", "Cantidad", "Nombre_Camiseta",
+                    "Precio_Unit", "Subtotal", "Notas"
+                ]].copy()
+
+                df_display["Precio_Unit"] = df_display["Precio_Unit"].apply(
+                    lambda x: f"${int(x):,}".replace(",", "."))
+                df_display["Subtotal"] = df_display["Subtotal"].apply(
+                    lambda x: f"${int(x):,}".replace(",", "."))
+
+                styled = df_display.style.applymap(color_tipo, subset=["Tipo"])
+                st.dataframe(styled, use_container_width=True, height=400)
+
                 st.markdown(
-                    f"<div style='font-size:12px;color:#666;margin-top:8px;'>"
-                    f"{len(filas)} filas · {len(df_show)} pedidos · "
-                    f"Filtro: {filtro_eq} / {filtro_col} / {filtro_est}"
-                    f"</div>",
+                    f"<div style='font-size:11px;color:#888;margin-top:4px;'>"
+                    f"{len(filas)} filas · {n_pedidos} pedidos · "
+                    f"Filtro: {filtro_eq} / {filtro_col} / {filtro_est}</div>",
                     unsafe_allow_html=True,
                 )
+
+                # ── Descargas ─────────────────────────────────────────────────
+                fname_base = f"reporte_{filtro_eq.replace(' ','_')}_{datetime.now().strftime('%Y%m%d')}"
+
+                st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+                dcol1, dcol2 = st.columns(2)
+
+                with dcol1:
+                    csv_bytes = df_rep.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        "⬇️ Descargar CSV",
+                        csv_bytes,
+                        f"{fname_base}.csv",
+                        "text/csv",
+                        key="dl_csv",
+                        use_container_width=True,
+                    )
+
+                with dcol2:
+                    # Generar XLSX con formato
+                    import io as _io
+                    try:
+                        from openpyxl import Workbook
+                        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                        wb = Workbook()
+                        ws = wb.active
+                        ws.title = "Reporte Producción"
+
+                        # Headers
+                        headers = list(df_rep.columns)
+                        header_fill = PatternFill("solid", start_color="0A0A0A")
+                        header_font = Font(bold=True, color="FFFFFF", name="Arial", size=10)
+                        for col_i, h in enumerate(headers, 1):
+                            cell = ws.cell(row=1, column=col_i, value=h)
+                            cell.fill = header_fill
+                            cell.font = header_font
+                            cell.alignment = Alignment(horizontal="center")
+
+                        # Data rows
+                        merch_fill = PatternFill("solid", start_color="FFFFFF")
+                        cs_fill    = PatternFill("solid", start_color="EEF4FF")
+                        merch_font = Font(name="Arial", size=9)
+                        cs_font    = Font(name="Arial", size=9, color="2563EB")
+
+                        for row_i, row in enumerate(df_rep.itertuples(index=False), 2):
+                            is_cs = row.Tipo == "CROSS-SELL"
+                            for col_i, val in enumerate(row, 1):
+                                cell = ws.cell(row=row_i, column=col_i, value=val)
+                                cell.fill = cs_fill if is_cs else merch_fill
+                                cell.font = cs_font if is_cs else merch_font
+                                cell.alignment = Alignment(horizontal="left")
+
+                        # Column widths
+                        widths = [14, 16, 10, 22, 12, 12, 10, 8, 18, 10, 12,
+                                  14, 12, 12, 12, 25, 14, 14]
+                        for col_i, w in enumerate(widths[:len(headers)], 1):
+                            ws.column_dimensions[
+                                ws.cell(1, col_i).column_letter].width = w
+
+                        ws.freeze_panes = "A2"
+
+                        buf = _io.BytesIO()
+                        wb.save(buf)
+                        buf.seek(0)
+                        st.download_button(
+                            "⬇️ Descargar Excel",
+                            buf.getvalue(),
+                            f"{fname_base}.xlsx",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key="dl_xlsx",
+                            use_container_width=True,
+                        )
+                    except Exception as e:
+                        st.caption(f"Excel no disponible: {e}")
 
 
 # ─── VISTA TIENDA ─────────────────────────────────────────────────────────────
