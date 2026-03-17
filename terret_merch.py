@@ -1049,11 +1049,35 @@ def vista_admin(client, drive):
                                                      placeholder="Ej: Camiseta Running Pro")
                         prod_precio  = st.number_input("Precio (COP) *", min_value=0,
                                                        step=1000, key="prod_precio")
-                        prod_tallas  = st.text_input("Tallas", key="prod_tallas",
-                                                     placeholder="XS,S,M,L,XL,XXL")
+                        # Tallas una a una
+                        if "tallas_lista" not in st.session_state:
+                            st.session_state.tallas_lista = []
+                        t_input = st.text_input("Agregar talla", key="prod_talla_input",
+                                                placeholder="Ej: XS, S, M, 36, 38…")
+                        if st.button("+ AGREGAR", key="btn_add_talla"):
+                            t_val = t_input.strip().upper()
+                            if t_val and t_val not in st.session_state.tallas_lista:
+                                st.session_state.tallas_lista.append(t_val)
+                                st.rerun()
+                        if st.session_state.tallas_lista:
+                            tallas_html = " ".join([
+                                f"<span style='background:#222;color:#F5F0E8;font-size:11px;"
+                                f"padding:3px 10px;border-radius:2px;margin-right:4px;"
+                                f"font-family:DM Mono,monospace;'>{t}</span>"
+                                for t in st.session_state.tallas_lista
+                            ])
+                            st.markdown(tallas_html, unsafe_allow_html=True)
+                            if st.button("✕ LIMPIAR TALLAS", key="btn_clear_tallas"):
+                                st.session_state.tallas_lista = []
+                                st.rerun()
+                        prod_tallas = ",".join(st.session_state.tallas_lista)
                     with c2:
-                        prod_colores = st.text_input("Colores", key="prod_colores",
-                                                     placeholder="Negro,Blanco")
+                        st.markdown(
+                            "<div style='font-size:12px;color:#444;padding:8px 0;'>"
+                            "🎨 Colores — deshabilitado temporalmente</div>",
+                            unsafe_allow_html=True,
+                        )
+                        prod_colores = ""
                         prod_desc    = st.text_area("Descripción", key="prod_desc",
                                                     placeholder="Material, detalles del diseño…")
 
@@ -1096,6 +1120,7 @@ def vista_admin(client, drive):
                                 }
                                 if guardar_producto(client, nuevo):
                                     n = len(prod_fotos) if prod_fotos else 0
+                                    st.session_state.tallas_lista = []
                                     st.success(f"✅ **{prod_nombre}** agregado con {n} foto(s)")
 
     # ── TAB 4: PEDIDOS ────────────────────────────────────────────────────────
@@ -1360,26 +1385,28 @@ def vista_tienda(client, drive, codigo_equipo):
             )
             continue
 
+        # Inicializar modal state
+        if "modal_prod_id" not in st.session_state:
+            st.session_state.modal_prod_id = None
+
         cols_grid = st.columns(3)
         for i, (_, prod) in enumerate(productos.iterrows()):
             with cols_grid[i % 3]:
-                precio  = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
-                tallas  = [t.strip() for t in str(prod.get("Tallas", "")).split(",") if t.strip()]
-                colores = [c.strip() for c in str(prod.get("Colores", "")).split(",") if c.strip()]
+                precio    = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
                 fotos_raw = str(prod.get("Fotos_URLs", "") or "")
-                fotos = [(u.strip(), u.strip()) for u in fotos_raw.split(",") if u.strip()]
+                fotos     = [u.strip() for u in fotos_raw.split(",") if u.strip()]
+                img_src   = fotos[0] if fotos else ""
 
                 img_html = (
-                    f"<img src='{fotos[0][1]}' style='width:100%;height:200px;"
+                    f"<img src='{img_src}' style='width:100%;height:200px;"
                     f"object-fit:cover;border-radius:4px 4px 0 0;'>"
-                    if fotos else
+                    if img_src else
                     f"<div style='width:100%;height:200px;background:#1a1a1a;"
                     f"border-radius:4px 4px 0 0;display:flex;align-items:center;"
                     f"justify-content:center;color:#333;font-size:32px;'>👕</div>"
                 )
-
                 desc = str(prod.get("Descripcion", "") or "")
-                desc_short = desc[:80] + "…" if len(desc) > 80 else desc
+                desc_short = desc[:60] + "…" if len(desc) > 60 else desc
 
                 st.markdown(
                     f"<div style='background:#111;border:1px solid #222;"
@@ -1388,41 +1415,138 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"<div style='padding:14px;'>"
                     f"<div style='font-weight:600;font-size:14px;margin-bottom:4px;'>"
                     f"{prod.get('Nombre','')}</div>"
-                    f"<div style='font-size:12px;color:#666;margin-bottom:8px;'>{desc_short}</div>"
+                    f"<div style='font-size:12px;color:#666;margin-bottom:10px;'>{desc_short}</div>"
                     f"<div style='font-family:Bebas Neue,sans-serif;font-size:22px;"
-                    f"color:{eq_color};'>{fmt_precio(precio)}</div>"
+                    f"color:{eq_color};margin-bottom:10px;'>{fmt_precio(precio)}</div>"
                     f"</div></div>",
                     unsafe_allow_html=True,
                 )
+                if st.button("VER PRODUCTO", key=f"open_{prod['ID']}"):
+                    st.session_state.modal_prod_id = prod["ID"]
+                    st.rerun()
 
-                prod_key  = f"prod_{prod['ID']}"
-                talla_sel = st.selectbox("Talla", tallas, key=f"talla_{prod_key}") if tallas else ""
-                color_sel = st.selectbox("Color", colores, key=f"color_{prod_key}") if colores else ""
-                cant      = st.number_input("Cantidad", min_value=1, max_value=20,
-                                            value=1, key=f"cant_{prod_key}")
+        # ── Modal de producto ──────────────────────────────────────────────────
+        if st.session_state.modal_prod_id:
+            prod_modal = productos[productos["ID"] == st.session_state.modal_prod_id]
+            if not prod_modal.empty:
+                prod = prod_modal.iloc[0]
+                precio    = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
+                tallas    = [t.strip() for t in str(prod.get("Tallas", "")).split(",") if t.strip()]
+                fotos_raw = str(prod.get("Fotos_URLs", "") or "")
+                fotos     = [u.strip() for u in fotos_raw.split(",") if u.strip()]
+                desc      = str(prod.get("Descripcion", "") or "")
                 es_personalizable = str(prod.get("Personalizable", "NO")).upper() == "SI"
-                nombre_camiseta = ""
-                if es_personalizable:
-                    nombre_camiseta = st.text_input(
-                        "Nombre en la camiseta (opcional, máx. 20 caracteres)",
-                        max_chars=20,
-                        key=f"nombre_cam_{prod_key}",
-                        placeholder="Ej: CARLOS",
+                prod_key  = f"modal_{prod['ID']}"
+
+                # Overlay oscuro
+                st.markdown(
+                    "<div style='position:fixed;top:0;left:0;width:100vw;height:100vh;"
+                    "background:rgba(0,0,0,0.75);z-index:999;'></div>",
+                    unsafe_allow_html=True,
+                )
+                # Panel modal
+                with st.container():
+                    st.markdown(
+                        f"<div style='background:#111;border:1px solid #333;"
+                        f"border-radius:8px;padding:28px;margin:0 auto;"
+                        f"max-width:700px;position:relative;z-index:1000;'>"
+                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:24px;"
+                        f"letter-spacing:3px;color:{eq_color};margin-bottom:4px;'>"
+                        f"{prod.get('Nombre','').upper()}</div>"
+                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
+                        f"color:#F5F0E8;margin-bottom:16px;'>{fmt_precio(precio)}</div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
                     )
 
-                if st.button("AGREGAR AL CARRITO", key=f"add_{prod_key}"):
-                    st.session_state.carrito.append({
-                        "prod_id":          prod["ID"],
-                        "nombre":           prod["Nombre"],
-                        "precio":           precio,
-                        "talla":            talla_sel,
-                        "color":            color_sel,
-                        "cantidad":         int(cant),
-                        "coleccion_id":     col_id,
-                        "coleccion_nombre": col_nombre,
-                        "nombre_camiseta":  nombre_camiseta.strip().upper() if nombre_camiseta else "",
-                    })
-                    st.success(f"✅ {prod['Nombre']} agregado")
+                    mc1, mc2 = st.columns([1, 1])
+                    with mc1:
+                        if fotos:
+                            st.image(fotos[0], use_container_width=True)
+                            if len(fotos) > 1:
+                                for foto_extra in fotos[1:]:
+                                    st.image(foto_extra, use_container_width=True)
+                        else:
+                            st.markdown(
+                                "<div style='height:280px;background:#1a1a1a;"
+                                "border-radius:4px;display:flex;align-items:center;"
+                                "justify-content:center;color:#333;font-size:40px;'>👕</div>",
+                                unsafe_allow_html=True,
+                            )
+                    with mc2:
+                        if desc:
+                            st.markdown(
+                                f"<div style='color:#888;font-size:13px;"
+                                f"margin-bottom:20px;line-height:1.7;'>{desc}</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                        # Tallas como botones toggle
+                        if tallas:
+                            st.markdown(
+                                "<div style='font-size:11px;color:#666;letter-spacing:2px;"
+                                "margin-bottom:8px;'>TALLA</div>",
+                                unsafe_allow_html=True,
+                            )
+                            talla_key = f"talla_sel_{prod['ID']}"
+                            if talla_key not in st.session_state:
+                                st.session_state[talla_key] = tallas[0]
+                            talla_cols = st.columns(len(tallas))
+                            for ti, t in enumerate(tallas):
+                                with talla_cols[ti]:
+                                    selected = st.session_state[talla_key] == t
+                                    btn_style = (
+                                        f"background:{eq_color};color:#0A0A0A;"
+                                        if selected else
+                                        "background:#222;color:#F5F0E8;"
+                                    )
+                                    st.markdown(
+                                        f"<div style='{btn_style}font-family:DM Mono,monospace;"
+                                        f"font-size:12px;text-align:center;padding:8px 4px;"
+                                        f"border-radius:3px;cursor:pointer;'>{t}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                    if st.button(t, key=f"tbtn_{prod['ID']}_{t}"):
+                                        st.session_state[talla_key] = t
+                                        st.rerun()
+                            talla_sel = st.session_state[talla_key]
+                        else:
+                            talla_sel = ""
+
+                        # Cantidad
+                        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+                        cant = st.number_input("Cantidad", min_value=1, max_value=20,
+                                               value=1, key=f"cant_{prod_key}")
+
+                        # Nombre personalizable
+                        nombre_camiseta = ""
+                        if es_personalizable:
+                            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                            nombre_camiseta = st.text_input(
+                                "Nombre en la camiseta (opcional, máx. 20 caracteres)",
+                                max_chars=20, key=f"nombre_cam_{prod_key}",
+                                placeholder="Ej: CARLOS",
+                            )
+
+                        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+                        if st.button("🛒 AGREGAR AL CARRITO", key=f"add_{prod_key}"):
+                            st.session_state.carrito.append({
+                                "prod_id":          prod["ID"],
+                                "nombre":           prod["Nombre"],
+                                "precio":           precio,
+                                "talla":            talla_sel,
+                                "color":            "",
+                                "cantidad":         int(cant),
+                                "coleccion_id":     col_id,
+                                "coleccion_nombre": col_nombre,
+                                "nombre_camiseta":  nombre_camiseta.strip().upper() if nombre_camiseta else "",
+                            })
+                            st.session_state.modal_prod_id = None
+                            st.rerun()
+
+                        if st.button("✕ CERRAR", key=f"close_{prod_key}"):
+                            st.session_state.modal_prod_id = None
+                            st.rerun()
 
     # ── CARRITO ───────────────────────────────────────────────────────────────
     if st.session_state.carrito:
