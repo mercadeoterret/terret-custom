@@ -51,75 +51,182 @@ HOJA_COLECCIONES = "Colecciones"
 HOJA_PRODUCTOS   = "Productos"
 HOJA_PEDIDOS     = "Pedidos"
 
+# ─── SVG LOGO ─────────────────────────────────────────────────────────────────
+LOGO_SVG = """<svg viewBox="0 0 438.53 94.81" xmlns="http://www.w3.org/2000/svg" style="height:32px;width:auto;display:inline-block;vertical-align:middle;">
+  <path d="M122.44.87c-.39-.45-.97-.7-1.59-.7H5.05c-.91,0-1.7.65-1.88,1.55L.06,18.85c-.11.56.04,1.15.4,1.59.36.44.9.7,1.47.7h21.41l-14.26,71.11c-.11.56.03,1.15.4,1.59.36.44.91.7,1.48.7h18.99c.91,0,1.7-.65,1.87-1.55l14.41-71.85h10.73l-15.3,71.33c-.12.56.04,1.15.43,1.6.39.44.98.7,1.59.7h59.15c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.98-.7-1.59-.7h-36.2l4.27-19.18h30.06c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.97-.7-1.59-.7h-29.29l3.88-14.74h35.79c.99,0,1.83-.65,2.02-1.55l2.8-17.13c.12-.56-.04-1.14-.43-1.59Z" fill="#FFFFFF"/>
+  <path d="M406.71.86c-.36-.44-.9-.7-1.47-.7h-114.07c-.98,0-1.83.65-2.02,1.55l-19.46,90.75c-.12.56.04,1.15.43,1.6.39.44.98.7,1.59.7h59.15c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.98-.7-1.59-.7h-36.2l4.27-19.18h30.06c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.97-.7-1.59-.7h-29.29l3.88-14.74h46.78l-14.26,71.11c-.11.56.03,1.15.4,1.59.36.44.91.7,1.48.7h18.99c.91,0,1.7-.65,1.87-1.55l14.41-71.85h22.17c.91,0,1.7-.65,1.88-1.55l3.11-17.14c.11-.56-.04-1.15-.4-1.59Z" fill="#FFFFFF"/>
+  <path d="M162.5.11h-28.51c-.92,0-1.71.65-1.89,1.55l-18.17,90.85c-.11.56.03,1.15.4,1.6.37.44.91.7,1.49.7h19.11c.92,0,1.71-.65,1.89-1.55l6.27-30.07h8.24l11.25,30.34c.27.77,1,1.29,1.82,1.29h20.13c.64,0,1.23-.32,1.59-.84.36-.52.43-1.19.2-1.79l-13.4-34.18c14.59-5.58,22.59-17.13,22.59-32.73S183.78.11,162.5.11ZM151.52,21.25h7.97c11.74,0,13.28,3.78,13.28,7.98,0,9.31-6.56,13.29-18.47,13.29h-7.32l4.54-21.27Z" fill="#FFFFFF"/>
+  <path d="M237.54,0h-28.51c-.92,0-1.71.65-1.89,1.55l-18.17,90.85c-.11.56.03,1.15.4,1.6.37.44.91.7,1.49.7h19.11c.92,0,1.71-.65,1.89-1.55l6.27-30.07h8.24l11.25,30.34c.27.77,1,1.29,1.82,1.29h20.13c.64,0,1.23-.32,1.59-.84.36-.52.43-1.19.2-1.79l-13.4-34.18c14.59-5.58,22.59-17.13,22.59-32.73S258.82,0,237.54,0ZM226.56,21.14h7.97c11.74,0,13.28,3.78,13.28,7.98,0,9.31-6.56,13.29-18.47,13.29h-7.32l4.54-21.27Z" fill="#FFFFFF"/>
+  <path d="M437.97,10.77c.11,5.77-4.84,10.72-10.68,10.67-5.85-.04-10.53-4.73-10.65-10.49-.12-5.83,4.7-10.71,10.36-10.86,6.05-.16,11.09,4.92,10.97,10.68ZM427.3,19.31c4.68.03,8.53-3.78,8.58-8.46.05-4.87-4.02-8.47-8.2-8.64-4.88-.19-8.86,3.88-8.92,8.42-.06,4.8,4.02,8.78,8.54,8.68Z" fill="#FFFFFF" fill-rule="evenodd"/>
+  <path d="M428.31,4.45h-3.66c-.12,0-.22.08-.24.2l-2.33,11.67c-.01.07,0,.15.05.21.05.06.12.09.19.09h2.46c.12,0,.22-.08.24-.2l.81-3.86h1.06l1.44,3.9c.03.1.13.17.23.17h2.59c.08,0,.16-.04.2-.11.05-.07.06-.15.03-.23l-1.72-4.39c1.87-.72,2.9-2.2,2.9-4.2s-1.51-3.23-4.24-3.23ZM426.9,7.17h1.02c1.51,0,1.71.49,1.71,1.02,0,1.2-.84,1.71-2.37,1.71h-.94l.58-2.73Z" fill="#FFFFFF"/>
+</svg>"""
+
 # ─── ESTILOS ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg:       #0A0A0A;
+    --bg2:      #111111;
+    --bg3:      #1A1A1A;
+    --border:   #222222;
+    --border2:  #2E2E2E;
+    --text:     #FFFFFF;
+    --text2:    #999999;
+    --text3:    #555555;
+    --accent:   #FFFFFF;
+}
 
 html, body, [data-testid="stAppViewContainer"] {
-    background: #0A0A0A !important;
-    color: #F5F0E8 !important;
-    font-family: 'DM Sans', sans-serif;
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Inter', sans-serif;
 }
-[data-testid="stAppViewContainer"] > .main { background: #0A0A0A; }
-[data-testid="stHeader"] { background: #0A0A0A !important; border-bottom: 1px solid #222; }
-[data-testid="stSidebar"] { background: #111 !important; }
+[data-testid="stAppViewContainer"] > .main { background: var(--bg); }
+[data-testid="stHeader"] { background: var(--bg) !important; border-bottom: 1px solid var(--border); }
+[data-testid="stSidebar"] { background: var(--bg2) !important; }
+[data-testid="stMainBlockContainer"] { padding-top: 1rem !important; }
 
+/* Métricas */
 [data-testid="stMetric"] {
-    background: #111;
-    border: 1px solid #222;
-    border-radius: 6px;
-    padding: 12px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
 }
 [data-testid="stMetricValue"] {
     font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 2rem !important;
-    color: #F5F0E8 !important;
+    font-size: 2.2rem !important;
+    color: var(--text) !important;
+    letter-spacing: 1px;
 }
 [data-testid="stMetricLabel"] {
     font-size: 9px !important;
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
-    color: #666 !important;
+    color: var(--text3) !important;
+    font-family: 'DM Mono', monospace !important;
 }
 
+/* Botones */
 .stButton > button {
-    background: #F5F0E8 !important;
-    color: #0A0A0A !important;
+    background: var(--text) !important;
+    color: var(--bg) !important;
     font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 14px !important;
-    letter-spacing: 2px !important;
+    font-size: 13px !important;
+    letter-spacing: 2.5px !important;
     border: none !important;
-    border-radius: 3px !important;
+    border-radius: 2px !important;
     padding: 10px 20px !important;
     width: 100%;
+    transition: opacity 0.15s !important;
 }
-.stButton > button:hover { opacity: 0.85 !important; }
+.stButton > button:hover { opacity: 0.82 !important; }
 
+/* Inputs */
 .stTextInput input, .stNumberInput input, .stSelectbox > div > div,
-.stTextArea textarea {
-    background: #111 !important;
-    border: 1px solid #333 !important;
-    color: #F5F0E8 !important;
-    border-radius: 3px !important;
+.stTextArea textarea, .stMultiSelect > div > div {
+    background: var(--bg2) !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--text) !important;
+    border-radius: 2px !important;
+    font-family: 'Inter', sans-serif !important;
+}
+.stTextInput input:focus, .stNumberInput input:focus,
+.stTextArea textarea:focus {
+    border-color: #555 !important;
+    box-shadow: none !important;
 }
 
-[data-testid="stRadio"] label { color: #F5F0E8 !important; }
-[data-testid="stRadio"] p    { color: #F5F0E8 !important; }
+/* Labels */
+label, .stTextInput label, .stNumberInput label,
+.stSelectbox label, .stTextArea label {
+    color: var(--text2) !important;
+    font-size: 11px !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    font-family: 'DM Mono', monospace !important;
+}
+
+[data-testid="stRadio"] label { color: var(--text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 14px !important; }
+[data-testid="stRadio"] p    { color: var(--text) !important; }
+
 [data-testid="stFileUploader"] {
-    background: #111 !important;
-    border: 1px dashed #333 !important;
-    border-radius: 6px !important;
+    background: var(--bg2) !important;
+    border: 1px dashed var(--border2) !important;
+    border-radius: 4px !important;
 }
 
-hr { border-color: #222 !important; }
+/* Checkboxes */
+.stCheckbox label { color: var(--text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 14px !important; }
+
+/* Dividers */
+hr { border-color: var(--border) !important; }
+
+/* Hide Streamlit chrome */
 #MainMenu, footer, header { visibility: hidden; }
 
-.stTabs [data-baseweb="tab-list"] { background: #111; border-bottom: 1px solid #222; }
-.stTabs [data-baseweb="tab"] { color: #666 !important; }
-.stTabs [aria-selected="true"] { color: #F5F0E8 !important; border-bottom: 2px solid #F5F0E8; }
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    gap: 0;
+}
+.stTabs [data-baseweb="tab"] {
+    color: var(--text3) !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    padding: 12px 20px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--text) !important;
+    border-bottom: 2px solid var(--text) !important;
+    background: transparent !important;
+}
 
-.stCheckbox label { color: #F5F0E8 !important; }
+/* Expanders */
+[data-testid="stExpander"] {
+    background: var(--bg2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+}
+[data-testid="stExpander"] summary {
+    color: var(--text2) !important;
+    font-size: 12px !important;
+    letter-spacing: 1px !important;
+    font-family: 'DM Mono', monospace !important;
+}
+
+/* Color picker */
+[data-testid="stColorPicker"] label {
+    color: var(--text2) !important;
+}
+
+/* Date input */
+[data-testid="stDateInput"] input {
+    background: var(--bg2) !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--text) !important;
+    border-radius: 2px !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Alert / info boxes */
+[data-testid="stAlert"] {
+    background: var(--bg2) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 4px !important;
+    color: var(--text) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -640,12 +747,12 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
 
 # ─── UI HELPERS ───────────────────────────────────────────────────────────────
 def seccion(titulo, subtitulo=""):
-    sub = (f"<div style='font-size:11px;color:#666;letter-spacing:1px;margin-top:2px;'>"
-           f"{subtitulo}</div>") if subtitulo else ""
+    sub = (f"<div style='font-size:10px;color:#555;letter-spacing:2px;margin-top:4px;"
+           f"font-family:DM Mono,monospace;'>{subtitulo}</div>") if subtitulo else ""
     st.markdown(
-        f"<div style='margin:32px 0 20px 0;padding-bottom:12px;border-bottom:1px solid #222;'>"
-        f"<div style='font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:3px;"
-        f"color:#F5F0E8;'>{titulo}</div>{sub}</div>",
+        f"<div style='margin:36px 0 20px 0;padding-bottom:14px;border-bottom:1px solid #1E1E1E;'>"
+        f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:4px;"
+        f"color:#FFFFFF;'>{titulo}</div>{sub}</div>",
         unsafe_allow_html=True,
     )
 
@@ -660,12 +767,18 @@ def fmt_precio(v):
 # ─── PANEL ADMIN ──────────────────────────────────────────────────────────────
 def vista_admin(client, drive):
     st.markdown(
-        "<div style='display:flex;align-items:center;gap:16px;margin-bottom:32px;'>"
-        "<div style='font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:4px;'>"
-        "⚡ TÉRRET MERCH</div>"
-        "<div style='background:#333;color:#888;font-size:10px;letter-spacing:2px;"
-        "padding:4px 10px;border-radius:2px;font-family:DM Mono,monospace;'>PANEL ADMIN</div>"
-        "</div>",
+        f"<div style='display:flex;align-items:center;justify-content:space-between;"
+        f"padding:20px 0 24px 0;border-bottom:1px solid #222;margin-bottom:32px;'>"
+        f"<div style='display:flex;align-items:center;gap:16px;'>"
+        f"{LOGO_SVG}"
+        f"<div style='width:1px;height:24px;background:#333;'></div>"
+        f"<div style='font-size:10px;color:#555;letter-spacing:3px;"
+        f"font-family:DM Mono,monospace;'>MERCH ADMIN</div>"
+        f"</div>"
+        f"<a href='https://terret.co' target='_blank' "
+        f"style='font-size:10px;color:#555;letter-spacing:1px;text-decoration:none;"
+        f"font-family:DM Mono,monospace;'>terret.co ↗</a>"
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -1444,13 +1557,15 @@ def vista_tienda(client, drive, codigo_equipo):
             if logo_url else ""
         )
         st.markdown(
-            f"<div style='max-width:360px;margin:80px auto;text-align:center;'>"
+            f"<div style='max-width:360px;margin:60px auto;text-align:center;'>"
+            f"<div style='margin-bottom:32px;'>{LOGO_SVG}</div>"
+            f"<div style='width:64px;height:1px;background:#222;margin:0 auto 24px;'></div>"
             f"{logo_html_pin}"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-            f"letter-spacing:4px;color:{eq_color};margin-bottom:4px;'>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
+            f"letter-spacing:5px;color:{eq_color};margin-bottom:4px;line-height:1;'>"
             f"{eq_nombre.upper()}</div>"
-            f"<div style='font-size:11px;color:#666;letter-spacing:2px;"
-            f"margin-bottom:32px;'>COLECCIÓN EXCLUSIVA</div>"
+            f"<div style='font-size:10px;color:#444;letter-spacing:3px;"
+            f"margin-bottom:36px;font-family:DM Mono,monospace;'>COLECCIÓN EXCLUSIVA</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -1474,20 +1589,32 @@ def vista_tienda(client, drive, codigo_equipo):
     ]
 
     # Header
+    # Nav bar tienda
+    st.markdown(
+        f"<div style='display:flex;align-items:center;justify-content:space-between;"
+        f"padding:16px 0 16px 0;border-bottom:1px solid #1E1E1E;margin-bottom:32px;'>"
+        f"<a href='https://terret.co' target='_blank' style='text-decoration:none;'>"
+        f"{LOGO_SVG}</a>"
+        f"<div style='font-size:10px;color:#444;letter-spacing:2px;"
+        f"font-family:DM Mono,monospace;'>COLECCIÓN EXCLUSIVA</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Hero del equipo
     logo_html = (
-        f"<img src='{logo_url}' style='height:52px;object-fit:contain;"
-        f"margin-right:16px;border-radius:4px;'>"
+        f"<img src='{logo_url}' style='height:56px;object-fit:contain;"
+        f"margin-right:20px;'>"
         if logo_url else ""
     )
     st.markdown(
-        f"<div style='border-bottom:1px solid #222;padding:20px 0 20px 0;"
-        f"margin-bottom:28px;display:flex;align-items:center;'>"
+        f"<div style='display:flex;align-items:center;margin-bottom:8px;'>"
         f"{logo_html}"
         f"<div>"
-        f"<div style='font-size:10px;color:#666;letter-spacing:3px;"
-        f"font-family:DM Mono,monospace;margin-bottom:4px;'>Colección Exclusiva</div>"
-        f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
-        f"letter-spacing:4px;color:{eq_color};'>{eq_nombre.upper()}</div>"
+        f"<div style='font-family:Bebas Neue,sans-serif;font-size:40px;"
+        f"letter-spacing:5px;color:{eq_color};line-height:1;'>{eq_nombre.upper()}</div>"
+        f"<div style='font-size:11px;color:#555;letter-spacing:2px;"
+        f"font-family:DM Mono,monospace;margin-top:4px;'>MERCH PERSONALIZADO</div>"
         f"</div></div>",
         unsafe_allow_html=True,
     )
@@ -1571,10 +1698,10 @@ def vista_tienda(client, drive, codigo_equipo):
             if col_corte else ""
         )
         st.markdown(
-            f"<div style='margin:24px 0 16px 0;padding-bottom:10px;"
-            f"border-bottom:1px solid #1a1a1a;'>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
-            f"letter-spacing:2px;color:{eq_color};'>{col_nombre.upper()}</div>"
+            f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
+            f"border-bottom:1px solid #1A1A1A;'>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
+            f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
             f"{corte_html}</div>",
             unsafe_allow_html=True,
         )
@@ -1611,15 +1738,18 @@ def vista_tienda(client, drive, codigo_equipo):
                 desc_short = desc[:60] + "…" if len(desc) > 60 else desc
 
                 st.markdown(
-                    f"<div style='background:#111;border:1px solid #222;"
-                    f"border-radius:6px;margin-bottom:8px;overflow:hidden;'>"
+                    f"<div style='background:#0F0F0F;border:1px solid #1A1A1A;"
+                    f"border-radius:3px;margin-bottom:4px;overflow:hidden;"
+                    f"transition:border-color 0.2s;'>"
                     f"{img_html}"
-                    f"<div style='padding:14px;'>"
-                    f"<div style='font-weight:600;font-size:14px;margin-bottom:4px;'>"
+                    f"<div style='padding:12px 14px 14px;'>"
+                    f"<div style='font-size:13px;font-weight:500;color:#FFF;"
+                    f"margin-bottom:3px;letter-spacing:0.3px;'>"
                     f"{prod.get('Nombre','')}</div>"
-                    f"<div style='font-size:12px;color:#666;margin-bottom:10px;'>{desc_short}</div>"
-                    f"<div style='font-family:Bebas Neue,sans-serif;font-size:22px;"
-                    f"color:{eq_color};margin-bottom:10px;'>{fmt_precio(precio)}</div>"
+                    f"<div style='font-size:11px;color:#555;margin-bottom:10px;"
+                    f"line-height:1.5;'>{desc_short}</div>"
+                    f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
+                    f"color:{eq_color};letter-spacing:1px;'>{fmt_precio(precio)}</div>"
                     f"</div></div>",
                     unsafe_allow_html=True,
                 )
@@ -1739,13 +1869,13 @@ def vista_tienda(client, drive, codigo_equipo):
                     st.rerun()
 
         st.markdown(
-            f"<div style='background:#1a1a1a;border-radius:4px;padding:14px 18px;"
+            f"<div style='border:1px solid #1E1E1E;border-radius:3px;padding:16px 20px;"
             f"display:flex;justify-content:space-between;align-items:center;"
-            f"margin:12px 0 24px 0;'>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
-            f"letter-spacing:2px;'>TOTAL</div>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-            f"color:{eq_color};'>{fmt_precio(total)}</div>"
+            f"margin:16px 0 28px 0;background:#0F0F0F;'>"
+            f"<div style='font-size:10px;color:#444;letter-spacing:3px;"
+            f"font-family:DM Mono,monospace;'>TOTAL</div>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
+            f"color:{eq_color};letter-spacing:1px;'>{fmt_precio(total)}</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -1835,15 +1965,29 @@ def vista_tienda(client, drive, codigo_equipo):
                 st.session_state.carrito = []
                 st.rerun()
 
+    # Footer tienda
+    st.markdown(
+        f"<div style='border-top:1px solid #1E1E1E;margin-top:64px;padding:32px 0;"
+        f"text-align:center;'>"
+        f"<div style='margin-bottom:16px;'>{LOGO_SVG}</div>"
+        f"<div style='font-size:10px;color:#333;letter-spacing:2px;"
+        f"font-family:DM Mono,monospace;'>"
+        f"<a href='https://terret.co' target='_blank' "
+        f"style='color:#333;text-decoration:none;'>terret.co</a>"
+        f" · MERCH PERSONALIZADO</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
 
 # ─── LOGIN ADMIN ──────────────────────────────────────────────────────────────
 def login_admin():
     st.markdown(
-        "<div style='max-width:380px;margin:100px auto;text-align:center;'>"
-        "<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-        "letter-spacing:4px;margin-bottom:4px;'>⚡ TÉRRET MERCH</div>"
-        "<div style='font-size:10px;color:#666;letter-spacing:3px;"
-        "margin-bottom:40px;'>PANEL DE ADMINISTRACIÓN</div></div>",
+        f"<div style='max-width:360px;margin:80px auto;text-align:center;'>"
+        f"<div style='margin-bottom:40px;'>{LOGO_SVG}</div>"
+        f"<div style='font-size:10px;color:#444;letter-spacing:3px;margin-bottom:40px;"
+        f"font-family:DM Mono,monospace;'>PANEL DE ADMINISTRACIÓN</div>"
+        f"</div>",
         unsafe_allow_html=True,
     )
     _, col, _ = st.columns([1, 2, 1])
@@ -1901,7 +2045,7 @@ def main():
         "¿ERES COACH O ADMINISTRADOR DE ÉQUIPO?</div>"
         "<div style='font-size:13px;color:#888;'>"
         "Contacta a Térret para crear tu colección personalizada.<br>"
-        "<a href='https://terretsports.com' style='color:#F5F0E8;'>terretsports.com</a>"
+        "<a href='https://terret.co' style='color:#F5F0E8;'>terret.co</a>"
         "</div></div></div>",
         unsafe_allow_html=True,
     )
