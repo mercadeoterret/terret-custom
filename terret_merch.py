@@ -2264,20 +2264,25 @@ def vista_tienda(client, drive, codigo_equipo):
         checkout_url = st.session_state.get("checkout_url", "")
         pedido_id_conf = st.session_state.get("pedido_id", "")
         st.markdown(
-            f"<div style='max-width:560px;margin:80px auto;text-align:center;'>"
-            f"<div style='font-size:48px;margin-bottom:16px;'>✅</div>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
+            f"<div style='max-width:600px;margin:60px auto;text-align:center;'>"
+            f"<div style='font-size:56px;margin-bottom:20px;'>✅</div>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:30px;"
             f"letter-spacing:4px;color:#0A0A0A;margin-bottom:8px;'>PEDIDO REGISTRADO</div>"
-            f"<div style='font-size:11px;color:#666;letter-spacing:2px;"
-            f"margin-bottom:32px;font-family:DM Mono,monospace;'>{pedido_id_conf}</div>"
-            f"<div style='color:#666;font-size:13px;line-height:1.9;margin-bottom:32px;'>"
-            f"Tu pedido quedó registrado.<br>"
-            f"Completa el pago en Shopify para confirmar tu compra.</div>"
+            f"<div style='font-size:11px;color:#888;letter-spacing:3px;"
+            f"margin-bottom:24px;font-family:DM Mono,monospace;'>{pedido_id_conf}</div>"
+            f"<div style='color:#666;font-size:14px;line-height:1.9;margin-bottom:40px;'>"
+            f"Tu pedido quedó guardado en nuestro sistema.<br>"
+            f"<b style='color:#0A0A0A;'>Aún falta un paso:</b> completa el pago para confirmar tu compra.</div>"
+            f"<div style='background:#FFF3CD;border:1px solid #FFCA28;border-radius:4px;"
+            f"padding:12px 20px;margin-bottom:28px;font-size:13px;color:#7A5400;'>"
+            f"⚠️ Tu pedido <b>no está confirmado</b> hasta que completes el pago</div>"
             f"<a href='{checkout_url}' target='_blank' "
-            f"style='display:inline-block;background:#FFFFFF;color:#0A0A0A;"
-            f"font-family:Bebas Neue,sans-serif;font-size:14px;"
-            f"letter-spacing:3px;padding:16px 48px;border-radius:2px;"
-            f"text-decoration:none;margin-bottom:24px;'>PAGAR AHORA →</a>"
+            f"style='display:block;background:#0A0A0A;color:#FFFFFF;"
+            f"font-family:Bebas Neue,sans-serif;font-size:18px;"
+            f"letter-spacing:4px;padding:20px 48px;border-radius:2px;"
+            f"text-decoration:none;margin-bottom:16px;'>PAGAR AHORA →</a>"
+            f"<div style='font-size:11px;color:#888;margin-top:12px;'>"
+            f"Serás redirigido al checkout seguro de Shopify</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
