@@ -1661,16 +1661,25 @@ def vista_tienda(client, drive, codigo_equipo):
                 for idx, item in enumerate(st.session_state.carrito):
                     subtotal = item["precio"] * item["cantidad"]
                     nombre_cam = f" · {item['nombre_camiseta']}" if item.get("nombre_camiseta") else ""
+                    foto_item = item.get("foto_url", "")
+                    img_sb = (f"<img src='{foto_item}' style='width:40px;height:40px;"
+                              f"object-fit:cover;border-radius:2px;flex-shrink:0;'>"
+                              if foto_item else
+                              f"<div style='width:40px;height:40px;background:#1A1A1A;"
+                              f"border-radius:2px;flex-shrink:0;'></div>")
                     c1, c2 = st.columns([4, 1])
                     with c1:
                         st.markdown(
-                            f"<div style='padding:8px 0;border-bottom:1px solid #1A1A1A;'>"
+                            f"<div style='display:flex;gap:10px;align-items:center;"
+                            f"padding:8px 0;border-bottom:1px solid #1A1A1A;'>"
+                            f"{img_sb}"
+                            f"<div>"
                             f"<div style='font-size:12px;color:#FFF;font-weight:500;'>{item['nombre']}</div>"
                             f"<div style='font-size:10px;color:#555;margin-top:2px;'>"
                             f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
                             f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
                             f"color:{eq_color};margin-top:4px;'>{fmt_precio(subtotal)}</div>"
-                            f"</div>",
+                            f"</div></div>",
                             unsafe_allow_html=True,
                         )
                     with c2:
