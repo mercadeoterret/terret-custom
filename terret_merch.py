@@ -1559,19 +1559,34 @@ def vista_admin(client, drive):
                 estados    = ["Todos", "PENDIENTE", "PAGADO", "PRODUCCION", "ENVIADO"]
                 filtro_est = st.selectbox("Estado:", estados, key="filtro_est_ped")
 
-            f4, f5 = st.columns(2)
+            f4, f5, f6 = st.columns(3)
             with f4:
-                fecha_desde = st.date_input("Desde", value=None, key="fecha_desde_ped")
+                fecha_desde = st.date_input("Desde", key="fecha_desde_ped",
+                    value=(datetime.now() - pd.Timedelta(days=30)).date())
             with f5:
-                fecha_hasta = st.date_input("Hasta", value=None, key="fecha_hasta_ped")
+                fecha_hasta = st.date_input("Hasta", key="fecha_hasta_ped", value=None)
+            with f6:
+                # Detectar colecciones activas para el default
+                cols_activas_nombres = set(
+                    df_col_ped[df_col_ped["Activa"] == "SI"]["Nombre"].tolist()
+                ) if not df_col_ped.empty and "Activa" in df_col_ped.columns else set()
+                solo_activas = st.toggle("Solo colecciones activas",
+                                         value=True, key="toggle_cols_activas")
 
             df_show = df_ped.copy()
-            # Normalizar Estado — extraer solo la primera palabra (limpia crosssell contaminado)
+            # Normalizar Estado
             df_show["Estado"] = df_show["Estado"].astype(str).str.split(" ").str[0].str.strip()
             df_ped["Estado"]  = df_ped["Estado"].astype(str).str.split(" ").str[0].str.strip()
+
+            # Filtro D: solo colecciones activas por defecto
+            if solo_activas and cols_activas_nombres and filtro_col == "Todas":
+                df_show = df_show[df_show["Coleccion_Nombre"].isin(cols_activas_nombres)]
+
             if filtro_eq  != "Todos": df_show = df_show[df_show["Equipo_Nombre"] == filtro_eq]
             if filtro_col != "Todas": df_show = df_show[df_show["Coleccion_Nombre"] == filtro_col]
             if filtro_est != "Todos": df_show = df_show[df_show["Estado"] == filtro_est]
+
+            # Filtro A: rango de fechas — por defecto últimos 30 días
             if fecha_desde:
                 df_show = df_show[pd.to_datetime(df_show["Fecha"], errors="coerce").dt.date >= fecha_desde]
             if fecha_hasta:
