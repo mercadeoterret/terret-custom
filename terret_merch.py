@@ -2150,12 +2150,54 @@ def vista_tienda(client, drive, codigo_equipo):
                 unsafe_allow_html=True,
             )
 
-        # ── Botones de acción con contraste claro ──────────────────────────────
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-        btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
-        if st.button(btn_label, key="btn_cs_pagar", type="primary"):
+        # ── Botones de acción — HTML real para control visual total ─────────────
+        hay_extras = bool(crosssell_cart)
+        btn_label  = "AGREGAR AL PEDIDO Y PAGAR" if hay_extras else "IR AL PAGO"
+
+        components.html(f"""
+        <style>
+          body {{ margin:0; padding:0; background:transparent; }}
+          .btn-primary {{
+            display:block; width:100%; padding:16px 24px;
+            background:#FFFFFF; color:#000000;
+            font-family:'Bebas Neue',sans-serif;
+            font-size:15px; letter-spacing:3px;
+            border:none; border-radius:2px;
+            cursor:pointer; margin-bottom:12px;
+            text-align:center;
+          }}
+          .btn-primary:hover {{ background:#E8E8E8; }}
+          .btn-skip {{
+            display:block; width:100%; padding:10px 24px;
+            background:transparent; color:#333333;
+            font-family:'Bebas Neue',sans-serif;
+            font-size:11px; letter-spacing:2px;
+            border:none; cursor:pointer;
+            text-align:center;
+            text-decoration:underline;
+            text-underline-offset:3px;
+          }}
+          .btn-skip:hover {{ color:#666; }}
+        </style>
+        <button class='btn-primary' onclick=\"window.parent.document.querySelector('[data-testid=stButton] button[kind=secondaryFormSubmit], [data-testid=stButton]:nth-of-type(1) button').click()\">→ {btn_label}</button>
+        <button class='btn-skip' onclick=\"window.parent.document.querySelectorAll('[data-testid=stButton] button')[document.querySelectorAll('[data-testid=stButton] button').length-1]?.click()\">Continuar sin agregar</button>
+        """, height=110)
+
+        # Botones funcionales ocultos via CSS
+        st.markdown("""
+        <style>
+        div[data-testid='stButton']:has(button[key='btn_cs_pagar']),
+        div[data-testid='stButton']:has(button[key='btn_cs_skip']) {
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        </style>""", unsafe_allow_html=True)
+
+        if st.button(btn_label, key="btn_cs_pagar"):
             if crosssell_cart and draft_id:
                 with st.spinner("Actualizando tu pedido…"):
                     ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
@@ -2186,13 +2228,6 @@ def vista_tienda(client, drive, codigo_equipo):
             st.session_state.pop("crosssell_products", None)
             st.session_state.pop("cs_mostrar", None)
             st.rerun()
-
-        st.markdown(
-            "<div style='border-top:1px solid #111;margin-top:16px;padding-top:16px;"
-            "text-align:center;'></div>",
-            unsafe_allow_html=True,
-        )
-        if st.button("Continuar sin agregar →", key="btn_cs_skip"):
             st.session_state.shop_step = "confirmed"
             st.session_state.pop("crosssell_products", None)
             st.session_state.pop("cs_mostrar", None)
