@@ -132,8 +132,37 @@ label, .stTextInput label, .stNumberInput label,
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+/* Jerarquía de botones */
+/* Secundario — outline sutil */
+button[kind="secondary"],
+[data-testid="stBaseButton-secondary"] {
+    background: transparent !important;
+    border: 1px solid #2A2A2A !important;
+    color: #666 !important;
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+}
+button[kind="secondary"]:hover,
+[data-testid="stBaseButton-secondary"]:hover {
+    border-color: #555 !important;
+    color: #999 !important;
+    opacity: 1 !important;
+}
+/* Primario — blanco sólido */
+[data-testid="stBaseButton-primary"] {
+    background: #FFFFFF !important;
+    color: #0A0A0A !important;
+    font-weight: 600 !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
+# CSS adicional para botones cross-sell via markdown injection
+STYLE_BTN_PRIMARY  = "background:#FFF;color:#0A0A0A;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2.5px;padding:12px 24px;border:none;border-radius:2px;width:100%;cursor:pointer;"
+STYLE_BTN_OUTLINE  = "background:transparent;color:#FFF;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:9px 16px;border:1px solid #333;border-radius:2px;width:100%;cursor:pointer;"
+STYLE_BTN_GHOST    = "background:transparent;color:#444;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:1px solid #1A1A1A;border-radius:2px;width:100%;cursor:pointer;"
+STYLE_BTN_SKIP     = "background:transparent;color:#333;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:none;border-radius:2px;width:100%;cursor:pointer;text-decoration:underline;text-underline-offset:3px;"
 
 
 # ─── GOOGLE AUTH ──────────────────────────────────────────────────────────────
@@ -2046,7 +2075,8 @@ def vista_tienda(client, drive, codigo_equipo):
                             key=f"cs_var_{prod['id']}",
                             label_visibility="collapsed",
                         )
-                        if st.button("+ AGREGAR", key=f"cs_add_{prod['id']}"):
+                        st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
+                        if st.button("+ AGREGAR", key=f"cs_add_{prod['id']}", type="secondary"):
                             crosssell_cart.append({
                                 "prod_id":    prod["id"],
                                 "nombre":     prod["titulo"],
@@ -2061,7 +2091,7 @@ def vista_tienda(client, drive, codigo_equipo):
             # Botón ver más
             if mostrar < len(productos_cs):
                 faltan = len(productos_cs) - mostrar
-                if st.button(f"VER MÁS ({faltan} productos)", key="btn_cs_ver_mas"):
+                if st.button(f"↓  VER MÁS  ({faltan} productos)", key="btn_cs_ver_mas", type="secondary"):
                     st.session_state.cs_mostrar = mostrar + 6
                     st.rerun()
             elif len(productos_cs) > 6:
@@ -2099,7 +2129,7 @@ def vista_tienda(client, drive, codigo_equipo):
         b1, b2 = st.columns([3, 1])
         with b1:
             btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
-            if st.button(btn_label, key="btn_cs_pagar"):
+            if st.button(btn_label, key="btn_cs_pagar", type="primary"):
                 if crosssell_cart and draft_id:
                     with st.spinner("Actualizando tu pedido…"):
                         ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
@@ -2132,7 +2162,8 @@ def vista_tienda(client, drive, codigo_equipo):
                 st.session_state.pop("cs_mostrar", None)
                 st.rerun()
         with b2:
-            if st.button("SALTAR", key="btn_cs_skip"):
+            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+            if st.button("SALTAR →", key="btn_cs_skip", type="tertiary" if False else "secondary"):
                 st.session_state.shop_step = "confirmed"
                 st.session_state.pop("crosssell_products", None)
                 st.session_state.pop("cs_mostrar", None)
