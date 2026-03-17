@@ -35,7 +35,7 @@ st.set_page_config(
     page_title="Térret Merch",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
 )
 
 # ─── CONSTANTES ───────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ HOJA_PRODUCTOS   = "Productos"
 HOJA_PEDIDOS     = "Pedidos"
 
 # ─── SVG LOGO ─────────────────────────────────────────────────────────────────
-LOGO_SVG = """<svg viewBox="0 0 438.53 94.81" xmlns="http://www.w3.org/2000/svg" style="height:32px;width:auto;display:inline-block;vertical-align:middle;">
+LOGO_SVG = """<svg viewBox="0 0 438.53 94.81" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;display:inline-block;vertical-align:middle;">
   <path d="M122.44.87c-.39-.45-.97-.7-1.59-.7H5.05c-.91,0-1.7.65-1.88,1.55L.06,18.85c-.11.56.04,1.15.4,1.59.36.44.9.7,1.47.7h21.41l-14.26,71.11c-.11.56.03,1.15.4,1.59.36.44.91.7,1.48.7h18.99c.91,0,1.7-.65,1.87-1.55l14.41-71.85h10.73l-15.3,71.33c-.12.56.04,1.15.43,1.6.39.44.98.7,1.59.7h59.15c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.98-.7-1.59-.7h-36.2l4.27-19.18h30.06c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.97-.7-1.59-.7h-29.29l3.88-14.74h35.79c.99,0,1.83-.65,2.02-1.55l2.8-17.13c.12-.56-.04-1.14-.43-1.59Z" fill="#FFFFFF"/>
   <path d="M406.71.86c-.36-.44-.9-.7-1.47-.7h-114.07c-.98,0-1.83.65-2.02,1.55l-19.46,90.75c-.12.56.04,1.15.43,1.6.39.44.98.7,1.59.7h59.15c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.98-.7-1.59-.7h-36.2l4.27-19.18h30.06c.99,0,1.83-.65,2.02-1.55l3.36-16.01c.12-.56-.04-1.14-.43-1.59-.39-.45-.97-.7-1.59-.7h-29.29l3.88-14.74h46.78l-14.26,71.11c-.11.56.03,1.15.4,1.59.36.44.91.7,1.48.7h18.99c.91,0,1.7-.65,1.87-1.55l14.41-71.85h22.17c.91,0,1.7-.65,1.88-1.55l3.11-17.14c.11-.56-.04-1.15-.4-1.59Z" fill="#FFFFFF"/>
   <path d="M162.5.11h-28.51c-.92,0-1.71.65-1.89,1.55l-18.17,90.85c-.11.56.03,1.15.4,1.6.37.44.91.7,1.49.7h19.11c.92,0,1.71-.65,1.89-1.55l6.27-30.07h8.24l11.25,30.34c.27.77,1,1.29,1.82,1.29h20.13c.64,0,1.23-.32,1.59-.84.36-.52.43-1.19.2-1.79l-13.4-34.18c14.59-5.58,22.59-17.13,22.59-32.73S183.78.11,162.5.11ZM151.52,21.25h7.97c11.74,0,13.28,3.78,13.28,7.98,0,9.31-6.56,13.29-18.47,13.29h-7.32l4.54-21.27Z" fill="#FFFFFF"/>
@@ -61,172 +61,76 @@ LOGO_SVG = """<svg viewBox="0 0 438.53 94.81" xmlns="http://www.w3.org/2000/svg"
   <path d="M428.31,4.45h-3.66c-.12,0-.22.08-.24.2l-2.33,11.67c-.01.07,0,.15.05.21.05.06.12.09.19.09h2.46c.12,0,.22-.08.24-.2l.81-3.86h1.06l1.44,3.9c.03.1.13.17.23.17h2.59c.08,0,.16-.04.2-.11.05-.07.06-.15.03-.23l-1.72-4.39c1.87-.72,2.9-2.2,2.9-4.2s-1.51-3.23-4.24-3.23ZM426.9,7.17h1.02c1.51,0,1.71.49,1.71,1.02,0,1.2-.84,1.71-2.37,1.71h-.94l.58-2.73Z" fill="#FFFFFF"/>
 </svg>"""
 
-# ─── ESTILOS ──────────────────────────────────────────────────────────────────
+# ─── ESTILOS QUIRÚRGICOS ──────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+/* Ocultar chrome de Streamlit */
+#MainMenu, footer { visibility: hidden; }
+[data-testid="stHeader"] { background: #0A0A0A !important; }
 
-:root {
-    --bg:       #0A0A0A;
-    --bg2:      #111111;
-    --bg3:      #1A1A1A;
-    --border:   #222222;
-    --border2:  #2E2E2E;
-    --text:     #FFFFFF;
-    --text2:    #999999;
-    --text3:    #555555;
-    --accent:   #FFFFFF;
-}
+/* Reducir padding top */
+[data-testid="stMainBlockContainer"] { padding-top: 0.5rem !important; }
+[data-testid="stSidebarContent"] { padding-top: 1rem !important; }
 
-html, body, [data-testid="stAppViewContainer"] {
-    background: var(--bg) !important;
-    color: var(--text) !important;
-    font-family: 'Inter', sans-serif;
-}
-[data-testid="stAppViewContainer"] > .main { background: var(--bg); }
-[data-testid="stHeader"] { background: var(--bg) !important; border-bottom: 1px solid var(--border); }
-[data-testid="stSidebar"] { background: var(--bg2) !important; }
-[data-testid="stMainBlockContainer"] { padding-top: 1rem !important; }
+/* Sidebar sin borde derecho visible */
+[data-testid="stSidebar"] { border-right: 1px solid #1A1A1A !important; }
 
-/* Métricas */
-[data-testid="stMetric"] {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 16px 20px;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 2.2rem !important;
-    color: var(--text) !important;
-    letter-spacing: 1px;
-}
-[data-testid="stMetricLabel"] {
-    font-size: 9px !important;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: var(--text3) !important;
-    font-family: 'DM Mono', monospace !important;
+/* Labels uppercase monospace */
+label, .stTextInput label, .stNumberInput label,
+.stSelectbox label, .stTextArea label, .stDateInput label,
+.stFileUploader label, .stMultiSelect label {
+    font-size: 10px !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    color: #555 !important;
 }
 
-/* Botones */
+/* Botones Bebas Neue */
 .stButton > button {
-    background: var(--text) !important;
-    color: var(--bg) !important;
     font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 13px !important;
     letter-spacing: 2.5px !important;
-    border: none !important;
+    font-size: 13px !important;
     border-radius: 2px !important;
-    padding: 10px 20px !important;
-    width: 100%;
     transition: opacity 0.15s !important;
 }
 .stButton > button:hover { opacity: 0.82 !important; }
 
-/* Inputs */
-.stTextInput input, .stNumberInput input, .stSelectbox > div > div,
-.stTextArea textarea, .stMultiSelect > div > div {
-    background: var(--bg2) !important;
-    border: 1px solid var(--border2) !important;
-    color: var(--text) !important;
-    border-radius: 2px !important;
-    font-family: 'Inter', sans-serif !important;
-}
-.stTextInput input:focus, .stNumberInput input:focus,
-.stTextArea textarea:focus {
-    border-color: #555 !important;
-    box-shadow: none !important;
-}
-
-/* Labels */
-label, .stTextInput label, .stNumberInput label,
-.stSelectbox label, .stTextArea label {
-    color: var(--text2) !important;
-    font-size: 11px !important;
-    letter-spacing: 1.5px !important;
-    text-transform: uppercase !important;
-    font-family: 'DM Mono', monospace !important;
-}
-
-[data-testid="stRadio"] label { color: var(--text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 14px !important; }
-[data-testid="stRadio"] p    { color: var(--text) !important; }
-
-[data-testid="stFileUploader"] {
-    background: var(--bg2) !important;
-    border: 1px dashed var(--border2) !important;
-    border-radius: 4px !important;
-}
-
-/* Checkboxes */
-.stCheckbox label { color: var(--text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 14px !important; }
-
-/* Dividers */
-hr { border-color: var(--border) !important; }
-
-/* Hide Streamlit chrome */
-#MainMenu, footer, header { visibility: hidden; }
-
-/* Tabs */
+/* Tabs estilo Terret */
 .stTabs [data-baseweb="tab-list"] {
-    background: transparent;
-    border-bottom: 1px solid var(--border);
-    gap: 0;
+    border-bottom: 1px solid #1A1A1A !important;
+    background: transparent !important;
+    gap: 0 !important;
 }
 .stTabs [data-baseweb="tab"] {
-    color: var(--text3) !important;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 11px !important;
-    letter-spacing: 2px !important;
+    font-size: 10px !important;
+    letter-spacing: 2.5px !important;
     text-transform: uppercase !important;
     padding: 12px 20px !important;
     border-radius: 0 !important;
-    background: transparent !important;
+    color: #444 !important;
 }
 .stTabs [aria-selected="true"] {
-    color: var(--text) !important;
-    border-bottom: 2px solid var(--text) !important;
-    background: transparent !important;
+    color: #FFF !important;
+    border-bottom: 1px solid #FFF !important;
 }
 
-/* Expanders */
-[data-testid="stExpander"] {
-    background: var(--bg2) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-}
-[data-testid="stExpander"] summary {
-    color: var(--text2) !important;
-    font-size: 12px !important;
+/* Métricas */
+[data-testid="stMetricValue"] {
+    font-family: 'Bebas Neue', sans-serif !important;
+    font-size: 2.4rem !important;
     letter-spacing: 1px !important;
-    font-family: 'DM Mono', monospace !important;
+}
+[data-testid="stMetricLabel"] {
+    font-size: 9px !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    color: #444 !important;
 }
 
-/* Color picker */
-[data-testid="stColorPicker"] label {
-    color: var(--text2) !important;
-}
-
-/* Date input */
-[data-testid="stDateInput"] input {
-    background: var(--bg2) !important;
-    border: 1px solid var(--border2) !important;
-    color: var(--text) !important;
-    border-radius: 2px !important;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-/* Alert / info boxes */
-[data-testid="stAlert"] {
-    background: var(--bg2) !important;
-    border: 1px solid var(--border2) !important;
-    border-radius: 4px !important;
-    color: var(--text) !important;
-}
+/* Scrollbar minimalista */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -766,22 +670,59 @@ def fmt_precio(v):
 
 # ─── PANEL ADMIN ──────────────────────────────────────────────────────────────
 def vista_admin(client, drive):
-    st.markdown(
-        f"<div style='display:flex;align-items:center;justify-content:space-between;"
-        f"padding:20px 0 24px 0;border-bottom:1px solid #222;margin-bottom:32px;'>"
-        f"<div style='display:flex;align-items:center;gap:16px;'>"
-        f"{LOGO_SVG}"
-        f"<div style='width:1px;height:24px;background:#333;'></div>"
-        f"<div style='font-size:10px;color:#555;letter-spacing:3px;"
-        f"font-family:DM Mono,monospace;'>MERCH ADMIN</div>"
-        f"</div>"
-        f"<a href='https://terret.co' target='_blank' "
-        f"style='font-size:10px;color:#555;letter-spacing:1px;text-decoration:none;"
-        f"font-family:DM Mono,monospace;'>terret.co ↗</a>"
-        f"</div>",
-        unsafe_allow_html=True,
-    )
+    # ── Sidebar admin ──────────────────────────────────────────────────────────
+    with st.sidebar:
+        st.markdown(
+            f"<div style='padding:8px 0 24px 0;border-bottom:1px solid #1A1A1A;"
+            f"margin-bottom:24px;'>{LOGO_SVG}</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<div style='font-size:9px;color:#333;letter-spacing:3px;"
+            "margin-bottom:20px;'>MERCH ADMIN</div>",
+            unsafe_allow_html=True,
+        )
 
+        # Selector de tab en sidebar
+        if "admin_tab" not in st.session_state:
+            st.session_state.admin_tab = "equipos"
+
+        nav_items = [
+            ("equipos",     "🏆", "EQUIPOS"),
+            ("colecciones", "📅", "COLECCIONES"),
+            ("productos",   "👕", "PRODUCTOS"),
+            ("pedidos",     "📋", "PEDIDOS"),
+        ]
+        for key, icon, label in nav_items:
+            activo = st.session_state.admin_tab == key
+            bg     = "#1A1A1A" if activo else "transparent"
+            color  = "#FFFFFF" if activo else "#555555"
+            border = "border-left:2px solid #FFF;" if activo else "border-left:2px solid transparent;"
+            st.markdown(
+                f"<div style='background:{bg};{border}padding:10px 14px;"
+                f"margin-bottom:2px;border-radius:0 2px 2px 0;cursor:pointer;'>"
+                f"<span style='font-size:10px;letter-spacing:2.5px;"
+                f"color:{color};'>{icon} {label}</span></div>",
+                unsafe_allow_html=True,
+            )
+            if st.button(label, key=f"nav_{key}",
+                         help=label):
+                st.session_state.admin_tab = key
+                st.rerun()
+
+        st.markdown("<div style='height:1px;background:#1A1A1A;margin:24px 0;'></div>",
+                    unsafe_allow_html=True)
+        st.markdown(
+            "<a href='https://terret.co' target='_blank' "
+            "style='font-size:10px;color:#333;letter-spacing:1px;"
+            "text-decoration:none;'>terret.co ↗</a>",
+            unsafe_allow_html=True,
+        )
+
+    # ── Contenido según tab activo ─────────────────────────────────────────────
+    tab_activo = st.session_state.get("admin_tab", "equipos")
+
+    # Crear tabs reales pero ocultos para mantener compatibilidad
     tab1, tab2, tab3, tab4 = st.tabs(["🏆 Equipos", "📅 Colecciones", "👕 Productos", "📋 Pedidos"])
 
     # ── TAB 1: EQUIPOS ────────────────────────────────────────────────────────
@@ -1836,7 +1777,70 @@ def vista_tienda(client, drive, codigo_equipo):
 
                 mostrar_modal_producto()
 
-    # ── CARRITO ───────────────────────────────────────────────────────────────
+    # ── SIDEBAR CARRITO ───────────────────────────────────────────────────────
+    with st.sidebar:
+        st.markdown(
+            f"<div style='padding:8px 0 20px 0;border-bottom:1px solid #1A1A1A;"
+            f"margin-bottom:20px;'>{LOGO_SVG}</div>",
+            unsafe_allow_html=True,
+        )
+        n_items = sum(item["cantidad"] for item in st.session_state.carrito)
+        badge = f" ({n_items})" if n_items > 0 else ""
+        st.markdown(
+            f"<div style='font-size:9px;color:#555;letter-spacing:3px;"
+            f"margin-bottom:16px;'>CARRITO{badge}</div>",
+            unsafe_allow_html=True,
+        )
+
+        if not st.session_state.carrito:
+            st.markdown(
+                "<div style='font-size:12px;color:#333;padding:16px 0;'>"
+                "Tu carrito está vacío</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            total_sidebar = 0
+            for idx, item in enumerate(st.session_state.carrito):
+                subtotal = item["precio"] * item["cantidad"]
+                total_sidebar += subtotal
+                nombre_cam = f" · {item['nombre_camiseta']}" if item.get("nombre_camiseta") else ""
+                st.markdown(
+                    f"<div style='border-bottom:1px solid #1A1A1A;padding:10px 0;'>"
+                    f"<div style='font-size:12px;color:#FFF;font-weight:500;"
+                    f"margin-bottom:2px;'>{item['nombre']}</div>"
+                    f"<div style='font-size:10px;color:#555;'>"
+                    f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
+                    f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
+                    f"color:#FFF;margin-top:4px;'>{fmt_precio(subtotal)}</div>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+                if st.button("✕ quitar", key=f"rm_sb_{idx}"):
+                    st.session_state.carrito.pop(idx)
+                    st.rerun()
+
+            st.markdown(
+                f"<div style='padding:16px 0;display:flex;justify-content:space-between;"
+                f"align-items:center;border-top:1px solid #222;margin-top:4px;'>"
+                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>TOTAL</span>"
+                f"<span style='font-family:Bebas Neue,sans-serif;font-size:22px;color:{eq_color};'>"
+                f"{fmt_precio(total_sidebar)}</span></div>",
+                unsafe_allow_html=True,
+            )
+            if st.button("VACIAR", key="vaciar_sb"):
+                st.session_state.carrito = []
+                st.rerun()
+
+        st.markdown("<div style='height:1px;background:#1A1A1A;margin:16px 0;'></div>",
+                    unsafe_allow_html=True)
+        st.markdown(
+            "<a href='https://terret.co' target='_blank' "
+            "style='font-size:10px;color:#333;letter-spacing:1px;"
+            "text-decoration:none;'>terret.co ↗</a>",
+            unsafe_allow_html=True,
+        )
+
+    # ── CARRITO SECCIÓN PRINCIPAL ─────────────────────────────────────────────
     if st.session_state.carrito:
         seccion("TU PEDIDO", "Revisa y confirma antes de pagar")
 
