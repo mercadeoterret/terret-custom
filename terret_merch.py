@@ -619,11 +619,14 @@ def vista_admin(client, drive):
         seccion("EQUIPOS", f"{len(df_eq)} equipos registrados")
 
         if not df_eq.empty:
+            eq_activos   = df_eq[df_eq["Activo"] == "SI"]
+            eq_inactivos = df_eq[df_eq["Activo"] != "SI"]
+
             c1, c2 = st.columns(2)
             with c1: st.metric("Total", len(df_eq))
-            with c2: st.metric("Activos", len(df_eq[df_eq["Activo"] == "SI"]))
+            with c2: st.metric("Activos", len(eq_activos))
 
-            for _, eq in df_eq.iterrows():
+            for _, eq in eq_activos.iterrows():
                 color   = eq.get("Color_Primario", "#F5F0E8") or "#F5F0E8"
                 logo_id = eq.get("Logo_Drive_ID", "")
                 logo_url = f"https://lh3.googleusercontent.com/d/{logo_id}" if logo_id else ""
@@ -687,12 +690,15 @@ def vista_admin(client, drive):
                                     st.rerun()
                         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
                         df_ped_eq = leer_pedidos(client)
-                        eq_activo = eq.get("Activo", "SI") == "SI"
                         ba, bb = st.columns(2)
                         with ba:
-                            lbl = "DESACTIVAR EQUIPO" if eq_activo else "ACTIVAR EQUIPO"
-                            if st.button(lbl, key=f"deact_eq_{eq['ID']}"):
-                                desactivar_registro(client, HOJA_EQUIPOS, eq["ID"], 9)
+                            # Equipo activo (solo aparece en loop de activos)
+                            if st.button("DESACTIVAR EQUIPO", key=f"deact_eq_{eq['ID']}"):
+                                ws_eq = get_ws(client, HOJA_EQUIPOS)
+                                cell_eq = ws_eq.find(eq["ID"]) if ws_eq else None
+                                if cell_eq:
+                                    ws_eq.update_cell(cell_eq.row, 9, "NO")
+                                st.cache_data.clear()
                                 st.rerun()
                         with bb:
                             if tiene_pedidos(df_ped_eq, "Equipo_ID", eq["ID"]):
@@ -720,6 +726,42 @@ def vista_admin(client, drive):
                                         if st.button("CANCELAR", key=f"no_eq_{eq['ID']}"):
                                             st.session_state.pop(f"confirm_eq_{eq['ID']}", None)
                                             st.rerun()
+
+            # ── Equipos archivados ─────────────────────────────────────────
+            if not eq_inactivos.empty:
+                st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                with st.expander(f"📁 ARCHIVADOS ({len(eq_inactivos)} equipos inactivos)"):
+                    for _, eq in eq_inactivos.iterrows():
+                        color = eq.get("Color_Primario", "#555") or "#555"
+                        pin_actual = str(eq.get("PIN", "") or "—")
+                        c1, c2, c3 = st.columns([3, 2, 1])
+                        with c1:
+                            st.markdown(
+                                f"<div style='font-size:13px;color:#555;'>"
+                                f"<b style='color:#777;'>{eq.get('Nombre','')}</b> · "
+                                f"<span style='font-family:DM Mono,monospace;font-size:11px;'>"
+                                f"{eq.get('Codigo','')}</span></div>"
+                                f"<div style='font-size:11px;color:#444;'>PIN: {pin_actual}</div>",
+                                unsafe_allow_html=True,
+                            )
+                        with c2:
+                            st.markdown(
+                                "<div style='font-size:11px;color:#444;padding:8px 0;'>"
+                                "⚫ INACTIVO</div>",
+                                unsafe_allow_html=True,
+                            )
+                        with c3:
+                            if st.button("ACTIVAR", key=f"act_arch_{eq['ID']}"):
+                                desactivar_registro(client, HOJA_EQUIPOS, eq["ID"], 9)
+                                # Activo col 9 — pero necesitamos poner SI no NO
+                                ws_eq = get_ws(client, HOJA_EQUIPOS)
+                                cell_eq = ws_eq.find(eq["ID"]) if ws_eq else None
+                                if cell_eq:
+                                    ws_eq.update_cell(cell_eq.row, 9, "SI")
+                                st.cache_data.clear()
+                                st.rerun()
+                        st.markdown("<hr style='border-color:#1a1a1a;margin:8px 0;'>",
+                                    unsafe_allow_html=True)
 
         # Formulario nuevo equipo
         st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
