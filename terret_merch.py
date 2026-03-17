@@ -722,11 +722,17 @@ def vista_admin(client, drive):
     # ── Contenido según tab activo ─────────────────────────────────────────────
     tab_activo = st.session_state.get("admin_tab", "equipos")
 
-    # Crear tabs reales pero ocultos para mantener compatibilidad
-    tab1, tab2, tab3, tab4 = st.tabs(["🏆 Equipos", "📅 Colecciones", "👕 Productos", "📋 Pedidos"])
+    # Indicador de sección activa en el header
+    nombres_tab = {"equipos": "🏆 EQUIPOS", "colecciones": "📅 COLECCIONES",
+                   "productos": "👕 PRODUCTOS", "pedidos": "📋 PEDIDOS"}
+    st.markdown(
+        f"<div style='border-bottom:1px solid #1A1A1A;padding-bottom:12px;"
+        f"margin-bottom:4px;font-size:10px;color:#444;letter-spacing:3px;'>"
+        f"{nombres_tab.get(tab_activo,'')}</div>",
+        unsafe_allow_html=True,
+    )
 
-    # ── TAB 1: EQUIPOS ────────────────────────────────────────────────────────
-    with tab1:
+    if tab_activo == "equipos":
         df_eq = leer_equipos(client)
         seccion("EQUIPOS", f"{len(df_eq)} equipos registrados")
 
@@ -927,7 +933,7 @@ def vista_admin(client, drive):
                             st.info(f"🔗 Link: `?equipo={eq_codigo.upper()}` · PIN: `{eq_pin}`")
 
     # ── TAB 2: COLECCIONES ────────────────────────────────────────────────────
-    with tab2:
+    elif tab_activo == "colecciones":
         df_eq  = leer_equipos(client)
         df_col = leer_colecciones(client)
         seccion("COLECCIONES", f"{len(df_col)} colecciones registradas")
@@ -1038,7 +1044,7 @@ def vista_admin(client, drive):
                             st.success(f"✅ Colección **{col_nombre}** creada")
 
     # ── TAB 3: PRODUCTOS ──────────────────────────────────────────────────────
-    with tab3:
+    elif tab_activo == "productos":
         df_eq  = leer_equipos(client)
         df_col = leer_colecciones(client)
         df_pro = leer_productos(client)
@@ -1278,7 +1284,7 @@ def vista_admin(client, drive):
                                     st.success(f"✅ **{prod_nombre}** agregado con {n} foto(s)")
 
     # ── TAB 4: PEDIDOS ────────────────────────────────────────────────────────
-    with tab4:
+    elif tab_activo == "pedidos":
         df_ped = leer_pedidos(client)
         df_col_ped = leer_colecciones(client)
         seccion("PEDIDOS", f"{len(df_ped)} pedidos registrados")
@@ -1777,132 +1783,83 @@ def vista_tienda(client, drive, codigo_equipo):
 
                 mostrar_modal_producto()
 
-    # ── SIDEBAR CARRITO ───────────────────────────────────────────────────────
+    # ── SIDEBAR: carrito + checkout completo ─────────────────────────────────
     with st.sidebar:
         st.markdown(
             f"<div style='padding:8px 0 20px 0;border-bottom:1px solid #1A1A1A;"
             f"margin-bottom:20px;'>{LOGO_SVG}</div>",
             unsafe_allow_html=True,
         )
-        n_items = sum(item["cantidad"] for item in st.session_state.carrito)
-        badge = f" ({n_items})" if n_items > 0 else ""
-        st.markdown(
-            f"<div style='font-size:9px;color:#555;letter-spacing:3px;"
-            f"margin-bottom:16px;'>CARRITO{badge}</div>",
-            unsafe_allow_html=True,
-        )
 
         if not st.session_state.carrito:
             st.markdown(
-                "<div style='font-size:12px;color:#333;padding:16px 0;'>"
-                "Tu carrito está vacío</div>",
+                "<div style='font-size:9px;color:#333;letter-spacing:3px;"
+                "margin-bottom:16px;'>CARRITO</div>"
+                "<div style='font-size:12px;color:#333;padding:8px 0;'>"
+                "Agrega productos para continuar.</div>",
                 unsafe_allow_html=True,
             )
         else:
-            total_sidebar = 0
-            for idx, item in enumerate(st.session_state.carrito):
-                subtotal = item["precio"] * item["cantidad"]
-                total_sidebar += subtotal
-                nombre_cam = f" · {item['nombre_camiseta']}" if item.get("nombre_camiseta") else ""
-                st.markdown(
-                    f"<div style='border-bottom:1px solid #1A1A1A;padding:10px 0;'>"
-                    f"<div style='font-size:12px;color:#FFF;font-weight:500;"
-                    f"margin-bottom:2px;'>{item['nombre']}</div>"
-                    f"<div style='font-size:10px;color:#555;'>"
-                    f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
-                    f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
-                    f"color:#FFF;margin-top:4px;'>{fmt_precio(subtotal)}</div>"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-                if st.button("✕ quitar", key=f"rm_sb_{idx}"):
-                    st.session_state.carrito.pop(idx)
-                    st.rerun()
-
+            n_items = sum(item["cantidad"] for item in st.session_state.carrito)
             st.markdown(
-                f"<div style='padding:16px 0;display:flex;justify-content:space-between;"
-                f"align-items:center;border-top:1px solid #222;margin-top:4px;'>"
-                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>TOTAL</span>"
-                f"<span style='font-family:Bebas Neue,sans-serif;font-size:22px;color:{eq_color};'>"
-                f"{fmt_precio(total_sidebar)}</span></div>",
+                f"<div style='font-size:9px;color:#888;letter-spacing:3px;"
+                f"margin-bottom:12px;'>CARRITO ({n_items})</div>",
                 unsafe_allow_html=True,
             )
-            if st.button("VACIAR", key="vaciar_sb"):
-                st.session_state.carrito = []
-                st.rerun()
 
-        st.markdown("<div style='height:1px;background:#1A1A1A;margin:16px 0;'></div>",
-                    unsafe_allow_html=True)
-        st.markdown(
-            "<a href='https://terret.co' target='_blank' "
-            "style='font-size:10px;color:#333;letter-spacing:1px;"
-            "text-decoration:none;'>terret.co ↗</a>",
-            unsafe_allow_html=True,
-        )
+            # Items
+            total = 0
+            for idx, item in enumerate(st.session_state.carrito):
+                subtotal = item["precio"] * item["cantidad"]
+                total += subtotal
+                nombre_cam = f" · <b style='color:#FFF;'>{item['nombre_camiseta']}</b>" if item.get("nombre_camiseta") else ""
+                c1, c2 = st.columns([4, 1])
+                with c1:
+                    st.markdown(
+                        f"<div style='padding:8px 0;border-bottom:1px solid #1A1A1A;'>"
+                        f"<div style='font-size:12px;color:#FFF;font-weight:500;'>{item['nombre']}</div>"
+                        f"<div style='font-size:10px;color:#555;margin-top:2px;'>"
+                        f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
+                        f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
+                        f"color:{eq_color};margin-top:4px;'>{fmt_precio(subtotal)}</div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                with c2:
+                    if st.button("✕", key=f"rm_sb_{idx}"):
+                        st.session_state.carrito.pop(idx)
+                        st.rerun()
 
-    # ── CARRITO SECCIÓN PRINCIPAL ─────────────────────────────────────────────
-    if st.session_state.carrito:
-        seccion("TU PEDIDO", "Revisa y confirma antes de pagar")
+            # Total
+            st.markdown(
+                f"<div style='display:flex;justify-content:space-between;"
+                f"align-items:center;padding:14px 0 16px 0;"
+                f"border-top:1px solid #1A1A1A;margin-top:4px;'>"
+                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>TOTAL</span>"
+                f"<span style='font-family:Bebas Neue,sans-serif;font-size:22px;"
+                f"color:{eq_color};'>{fmt_precio(total)}</span></div>",
+                unsafe_allow_html=True,
+            )
 
-        total = 0
-        for idx, item in enumerate(st.session_state.carrito):
-            subtotal = item["precio"] * item["cantidad"]
-            total   += subtotal
-            c1, c2, c3 = st.columns([4, 2, 1])
-            with c1:
-                st.markdown(
-                    f"<div style='padding:10px 0;border-bottom:1px solid #1a1a1a;'>"
-                    f"<div style='font-weight:500;'>{item['nombre']}</div>"
-                    f"<div style='font-size:11px;color:#666;'>"
-                    f"Talla: {item['talla']} · Color: {item['color']} · "
-                    f"x{item['cantidad']} · {item.get('coleccion_nombre','')}"
-                    + (f" · Nombre: <b style='color:#F5F0E8;'>{item['nombre_camiseta']}</b>" if item.get('nombre_camiseta') else "")
-                    + "</div></div>",
-                    unsafe_allow_html=True,
-                )
-            with c2:
-                st.markdown(
-                    f"<div style='padding:10px 0;text-align:right;"
-                    f"font-family:Bebas Neue,sans-serif;font-size:18px;'>"
-                    f"{fmt_precio(subtotal)}</div>",
-                    unsafe_allow_html=True,
-                )
-            with c3:
-                if st.button("✕", key=f"rm_{idx}"):
-                    st.session_state.carrito.pop(idx)
-                    st.rerun()
-
-        st.markdown(
-            f"<div style='border:1px solid #1E1E1E;border-radius:3px;padding:16px 20px;"
-            f"display:flex;justify-content:space-between;align-items:center;"
-            f"margin:16px 0 28px 0;background:#0F0F0F;'>"
-            f"<div style='font-size:10px;color:#444;letter-spacing:3px;"
-            f"font-family:DM Mono,monospace;'>TOTAL</div>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
-            f"color:{eq_color};letter-spacing:1px;'>{fmt_precio(total)}</div>"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-        seccion("TUS DATOS", "Para procesar tu pedido")
-        c1, c2 = st.columns(2)
-        with c1:
+            # Formulario checkout en sidebar
+            st.markdown(
+                "<div style='font-size:9px;color:#555;letter-spacing:3px;"
+                "margin-bottom:12px;margin-top:4px;'>TUS DATOS</div>",
+                unsafe_allow_html=True,
+            )
             nombre = st.text_input("Nombre completo *", key="buyer_nombre",
-                                   placeholder="Como quieres que aparezca en el pedido")
-        with c2:
-            email = st.text_input("Correo electrónico *", key="buyer_email",
-                                  placeholder="Para enviarte la confirmación")
+                                   placeholder="Tu nombre completo")
+            email  = st.text_input("Correo electrónico *", key="buyer_email",
+                                   placeholder="tu@correo.com")
+            notas  = st.text_area("Notas (opcional)", key="buyer_notas",
+                                  placeholder="Dirección de envío, etc.",
+                                  height=80)
 
-        notas = st.text_area("Notas adicionales", key="buyer_notas",
-                             placeholder="Dirección de envío, instrucciones especiales…")
-
-        col_btn1, col_btn2 = st.columns([3, 1])
-        with col_btn1:
-            if st.button("🛒 PROCEDER AL PAGO", key="btn_pagar"):
+            if st.button("PROCEDER AL PAGO →", key="btn_pagar"):
                 if not nombre or not email:
                     st.error("Nombre y correo son obligatorios.")
                 elif "@" not in email:
-                    st.error("El correo no es válido.")
+                    st.error("Correo inválido.")
                 else:
                     pedido_id      = f"TM-{str(uuid.uuid4())[:6].upper()}"
                     col_id_pedido  = st.session_state.carrito[0].get("coleccion_id", "")
@@ -1919,7 +1876,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         )
 
                     if err or not draft:
-                        st.error(f"Error creando la orden: {err}")
+                        st.error(f"Error: {err}")
                     else:
                         pedido_data = {
                             "id":               pedido_id,
@@ -1941,35 +1898,53 @@ def vista_tienda(client, drive, codigo_equipo):
 
                         if checkout_url:
                             st.session_state.carrito = []
-                            st.markdown(
-                                f"<div style='background:#0a1a0a;border:1px solid #1a3a1a;"
-                                f"border-radius:6px;padding:24px;text-align:center;'>"
-                                f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
-                                f"color:#00C853;letter-spacing:2px;margin-bottom:8px;'>"
-                                f"✅ PEDIDO REGISTRADO</div>"
-                                f"<div style='color:#888;font-size:13px;margin-bottom:16px;'>"
-                                f"Tu pedido <b style='color:#F5F0E8;'>{pedido_id}</b> está listo.<br>"
-                                f"Haz clic para completar el pago.</div>"
-                                f"<a href='{checkout_url}' target='_blank' "
-                                f"style='background:#00C853;color:#0A0A0A;"
-                                f"font-family:Bebas Neue,sans-serif;font-size:16px;"
-                                f"letter-spacing:2px;padding:12px 32px;border-radius:3px;"
-                                f"text-decoration:none;display:inline-block;'>"
-                                f"PAGAR AHORA →</a></div>",
-                                unsafe_allow_html=True,
-                            )
+                            st.session_state["checkout_url"] = checkout_url
+                            st.session_state["pedido_id"]    = pedido_id
+                            st.rerun()
                         else:
-                            st.warning(
-                                "Pedido registrado pero no se generó el link de pago. "
-                                "Contacta a Térret."
-                            )
+                            st.warning("Pedido registrado sin link de pago. Contacta a Térret.")
 
-        with col_btn2:
-            if st.button("VACIAR CARRITO", key="btn_vaciar"):
+            if st.button("VACIAR", key="vaciar_sb"):
                 st.session_state.carrito = []
                 st.rerun()
 
-    # Footer tienda
+        st.markdown("<div style='height:1px;background:#1A1A1A;margin:20px 0;'></div>",
+                    unsafe_allow_html=True)
+        st.markdown(
+            "<a href='https://terret.co' target='_blank' "
+            "style='font-size:10px;color:#333;letter-spacing:1px;"
+            "text-decoration:none;'>terret.co ↗</a>",
+            unsafe_allow_html=True,
+        )
+
+    # ── Mostrar confirmación de pago si existe ─────────────────────────────────
+    if st.session_state.get("checkout_url"):
+        checkout_url = st.session_state["checkout_url"]
+        pedido_id    = st.session_state.get("pedido_id", "")
+        st.markdown(
+            f"<div style='background:#0a1a0a;border:1px solid #1a3a1a;"
+            f"border-radius:4px;padding:32px;text-align:center;margin:40px 0;'>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:22px;"
+            f"color:#00C853;letter-spacing:3px;margin-bottom:8px;'>✅ PEDIDO REGISTRADO</div>"
+            f"<div style='color:#666;font-size:13px;margin-bottom:20px;line-height:1.8;'>"
+            f"Tu pedido <b style='color:#FFF;'>{pedido_id}</b> está listo.<br>"
+            f"Completa el pago en Shopify para confirmar.</div>"
+            f"<a href='{checkout_url}' target='_blank' "
+            f"style='background:#FFFFFF;color:#0A0A0A;"
+            f"font-family:Bebas Neue,sans-serif;font-size:14px;"
+            f"letter-spacing:3px;padding:14px 40px;border-radius:2px;"
+            f"text-decoration:none;display:inline-block;'>PAGAR AHORA →</a>"
+            f"<br><br>"
+            f"<span style='font-size:11px;color:#333;cursor:pointer;' "
+            f"onclick='this.parentElement.style.display=\"none\"'>Seguir comprando →</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("← SEGUIR COMPRANDO", key="btn_seguir"):
+            del st.session_state["checkout_url"]
+            st.rerun()
+
+        # Footer tienda
     st.markdown(
         f"<div style='border-top:1px solid #1E1E1E;margin-top:64px;padding:32px 0;"
         f"text-align:center;'>"
