@@ -2000,58 +2000,62 @@ def vista_tienda(client, drive, codigo_equipo):
         pedido_id_conf = st.session_state.get("pedido_id", "")
         draft_id       = st.session_state.get("draft_id", "")
 
+        # Header
         st.markdown(
-            f"<div style='text-align:center;padding:32px 0 8px 0;'>"
-            f"<div style='font-size:9px;color:#555;letter-spacing:3px;"
-            f"font-family:DM Mono,monospace;margin-bottom:8px;'>TU PEDIDO {pedido_id_conf} ESTÁ LISTO</div>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-            f"letter-spacing:3px;color:#FFF;margin-bottom:4px;'>ANTES DE PAGAR</div>"
-            f"<div style='font-size:13px;color:#555;margin-bottom:32px;'>"
-            f"Completa tu pedido con estos productos de Térret</div>"
+            f"<div style='text-align:center;padding:24px 0 32px 0;'>"
+            f"<div style='font-size:9px;color:#444;letter-spacing:3px;"
+            f"font-family:DM Mono,monospace;margin-bottom:8px;'>"
+            f"PEDIDO {pedido_id_conf} REGISTRADO</div>"
+            f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
+            f"letter-spacing:4px;color:#FFF;margin-bottom:8px;'>COMPLETA TU PEDIDO</div>"
+            f"<div style='font-size:13px;color:#444;'>"
+            f"Productos Térret con envío en el mismo pedido</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
 
-        # Cargar best sellers (cacheado 5 min por st.cache_data)
-        if "cs_mostrar" not in st.session_state:
+        # Cargar best sellers
+        if "crosssell_products" not in st.session_state:
+            with st.spinner("Cargando productos…"):
+                st.session_state.crosssell_products = shopify_get_best_sellers()
             st.session_state.cs_mostrar = 6
-        with st.spinner("Cargando productos de Térret…"):
-            productos_cs = shopify_get_best_sellers()
+
+        productos_cs   = st.session_state.get("crosssell_products", [])
         crosssell_cart = st.session_state.get("crosssell_cart", [])
 
         if not productos_cs:
             st.markdown(
-                "<div style='text-align:center;color:#333;padding:20px;'>"
+                "<div style='text-align:center;color:#333;padding:40px;'>"
                 "No hay productos disponibles en este momento.</div>",
                 unsafe_allow_html=True,
             )
         else:
-            # Paginación: mostrar de 6 en 6
-            if "cs_mostrar" not in st.session_state:
-                st.session_state.cs_mostrar = 6
-            mostrar = st.session_state.cs_mostrar
+            mostrar           = st.session_state.get("cs_mostrar", 6)
             productos_visibles = productos_cs[:mostrar]
+            cols_cs           = st.columns(3)
 
-            cols_cs = st.columns(3)
             for i, prod in enumerate(productos_visibles):
                 with cols_cs[i % 3]:
+                    ya_agregado = any(c["prod_id"] == prod["id"] for c in crosssell_cart)
+                    variantes   = prod["variantes"]
+
+                    # Card imagen + info
                     img_cs = (
                         f"<img src='{prod['imagen']}' style='width:100%;display:block;"
-                        f"border-radius:3px 3px 0 0;aspect-ratio:1/1;object-fit:cover;'>"
+                        f"aspect-ratio:1/1;object-fit:cover;border-radius:3px 3px 0 0;'>"
                         if prod["imagen"] else
                         f"<div style='width:100%;aspect-ratio:1/1;background:#1A1A1A;"
                         f"border-radius:3px 3px 0 0;'></div>"
                     )
-                    # Verificar si ya está en crosssell_cart
-                    ya_agregado = any(c["prod_id"] == prod["id"] for c in crosssell_cart)
+                    border_color = "#00C853" if ya_agregado else "#1A1A1A"
                     st.markdown(
-                        f"<div style='background:#0F0F0F;border:1px solid #1A1A1A;"
-                        f"border-radius:3px;overflow:hidden;margin-bottom:8px;'>"
+                        f"<div style='background:#0F0F0F;border:1px solid {border_color};"
+                        f"border-radius:3px;overflow:hidden;margin-bottom:6px;'>"
                         f"{img_cs}"
-                        f"<div style='padding:10px 12px;'>"
+                        f"<div style='padding:10px 12px 12px;'>"
                         f"<div style='font-size:12px;color:#FFF;font-weight:500;"
-                        f"margin-bottom:4px;line-height:1.3;'>{prod['titulo']}</div>"
-                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
+                        f"line-height:1.4;margin-bottom:6px;'>{prod['titulo']}</div>"
+                        f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
                         f"color:{eq_color};'>{fmt_precio(prod['precio'])}</div>"
                         f"</div></div>",
                         unsafe_allow_html=True,
@@ -2059,13 +2063,13 @@ def vista_tienda(client, drive, codigo_equipo):
 
                     if ya_agregado:
                         st.markdown(
-                            "<div style='font-size:11px;color:#00C853;text-align:center;"
-                            "padding:4px 0;letter-spacing:1px;'>✓ AGREGADO</div>",
+                            "<div style='background:#00C85322;border:1px solid #00C853;"
+                            "border-radius:2px;padding:8px;text-align:center;"
+                            "font-size:11px;color:#00C853;letter-spacing:2px;"
+                            "font-family:DM Mono,monospace;'>✓ EN TU PEDIDO</div>",
                             unsafe_allow_html=True,
                         )
                     else:
-                        # Selector de variante
-                        variantes = prod["variantes"]
                         opciones_v = {
                             f"{v.get('title','Única')} — {fmt_precio(v['price'])}": v["numeric_id"]
                             for v in variantes
@@ -2075,12 +2079,11 @@ def vista_tienda(client, drive, codigo_equipo):
                             key=f"cs_var_{prod['id']}",
                             label_visibility="collapsed",
                         )
-                        st.markdown("<div style='margin-top:4px;'></div>", unsafe_allow_html=True)
-                        if st.button("+ AGREGAR", key=f"cs_add_{prod['id']}", type="secondary"):
+                        if st.button("+ AGREGAR AL PEDIDO", key=f"cs_add_{prod['id']}"):
                             crosssell_cart.append({
                                 "prod_id":    prod["id"],
                                 "nombre":     prod["titulo"],
-                                "variant_id": opciones_v[sel_v],  # numeric id
+                                "variant_id": opciones_v[sel_v],
                                 "cantidad":   1,
                                 "precio":     prod["precio"],
                                 "imagen":     prod["imagen"],
@@ -2088,86 +2091,103 @@ def vista_tienda(client, drive, codigo_equipo):
                             st.session_state.crosssell_cart = crosssell_cart
                             st.rerun()
 
-            # Botón ver más
+            # Ver más
             if mostrar < len(productos_cs):
                 faltan = len(productos_cs) - mostrar
-                if st.button(f"↓  VER MÁS  ({faltan} productos)", key="btn_cs_ver_mas", type="secondary"):
+                st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                if st.button(f"↓  VER MÁS  ({faltan} productos)", key="btn_cs_ver_mas"):
                     st.session_state.cs_mostrar = mostrar + 6
                     st.rerun()
-            elif len(productos_cs) > 6:
-                st.markdown(
-                    "<div style='font-size:11px;color:#333;text-align:center;"
-                    "padding:8px 0;'>Todos los productos mostrados</div>",
-                    unsafe_allow_html=True,
-                )
 
-        # Resumen cross-sell
+        # Resumen extras seleccionados
         if crosssell_cart:
             total_cs = sum(c["precio"] for c in crosssell_cart)
+            items_html = "".join([
+                f"<div style='display:flex;justify-content:space-between;"
+                f"align-items:center;padding:6px 0;border-bottom:1px solid #1A1A1A;'>"
+                f"<div style='display:flex;align-items:center;gap:10px;'>"
+                f"<img src='{c['imagen']}' style='width:36px;height:36px;object-fit:cover;"
+                f"border-radius:2px;' onerror='this.style.display=\"none\"'>"
+                f"<span style='font-size:12px;color:#888;'>{c['nombre'][:30]}…" if len(c['nombre'])>30 else
+                f"<div style='display:flex;justify-content:space-between;"
+                f"align-items:center;padding:6px 0;border-bottom:1px solid #1A1A1A;'>"
+                f"<div style='display:flex;align-items:center;gap:10px;'>"
+                f"<img src='{c['imagen']}' style='width:36px;height:36px;object-fit:cover;"
+                f"border-radius:2px;' onerror='this.style.display=\"none\"'>"
+                f"<span style='font-size:12px;color:#888;'>{c['nombre']}"
+                for c in crosssell_cart
+            ])
             st.markdown(
-                f"<div style='background:#111;border:1px solid #1A1A1A;border-radius:3px;"
-                f"padding:14px 18px;margin-top:16px;margin-bottom:8px;'>"
+                f"<div style='background:#111;border:1px solid #1A1A1A;"
+                f"border-radius:3px;padding:14px 16px;margin:16px 0 8px 0;'>"
                 f"<div style='font-size:9px;color:#555;letter-spacing:2px;"
-                f"margin-bottom:8px;'>PRODUCTOS EXTRA SELECCIONADOS</div>"
+                f"margin-bottom:10px;'>EXTRAS SELECCIONADOS</div>"
                 + "".join([
                     f"<div style='display:flex;justify-content:space-between;"
-                    f"font-size:12px;color:#888;padding:3px 0;'>"
-                    f"<span>{c['nombre']}</span>"
-                    f"<span style='color:#FFF;'>{fmt_precio(c['precio'])}</span></div>"
+                    f"align-items:center;padding:5px 0;'>"
+                    f"<span style='font-size:12px;color:#888;'>{c['nombre'][:35]}{'…' if len(c['nombre'])>35 else ''}</span>"
+                    f"<span style='font-family:Bebas Neue,sans-serif;font-size:16px;"
+                    f"color:#FFF;'>{fmt_precio(c['precio'])}</span></div>"
                     for c in crosssell_cart
                 ])
-                + f"<div style='border-top:1px solid #222;margin-top:8px;padding-top:8px;"
-                f"display:flex;justify-content:space-between;'>"
-                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>EXTRA</span>"
-                f"<span style='font-family:Bebas Neue,sans-serif;font-size:18px;"
-                f"color:{eq_color};'>{fmt_precio(total_cs)}</span></div>"
-                f"</div>",
+                + f"<div style='border-top:1px solid #222;margin-top:8px;padding-top:10px;"
+                f"display:flex;justify-content:space-between;align-items:center;'>"
+                f"<span style='font-size:9px;color:#555;letter-spacing:2px;'>EXTRA TOTAL</span>"
+                f"<span style='font-family:Bebas Neue,sans-serif;font-size:20px;"
+                f"color:{eq_color};'>{fmt_precio(total_cs)}</span>"
+                f"</div></div>",
                 unsafe_allow_html=True,
             )
 
-        # Botones de acción
-        b1, b2 = st.columns([3, 1])
-        with b1:
-            btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
-            if st.button(btn_label, key="btn_cs_pagar", type="primary"):
-                if crosssell_cart and draft_id:
-                    with st.spinner("Actualizando tu pedido…"):
-                        ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
-                    if ok:
-                        new_url = result.get("invoice_url", checkout_url)
-                        st.session_state["checkout_url"] = new_url
-                        # Guardar extras en Sheets via Notas del pedido
-                        try:
-                            extras_json = json.dumps([{
-                                "nombre":   c["nombre"],
-                                "variante": str(c.get("variant_id","")),
-                                "cantidad": c["cantidad"],
-                                "precio":   c["precio"],
-                            } for c in crosssell_cart], ensure_ascii=False)
-                            ws_ped = get_ws(client, HOJA_PEDIDOS)
-                            if ws_ped:
-                                cell_ped = ws_ped.find(st.session_state.get("pedido_id",""))
-                                if cell_ped:
-                                    notas_actuales = ws_ped.cell(cell_ped.row, 14).value or ""
-                                    ws_ped.update_cell(cell_ped.row, 14,
-                                        notas_actuales + f" crosssell:{extras_json}")
-                                    st.cache_data.clear()
-                        except:
-                            pass
-                    else:
-                        st.error(f"Error actualizando pedido: {result}")
-                        st.stop()
-                st.session_state.shop_step = "confirmed"
-                st.session_state.pop("crosssell_products", None)
-                st.session_state.pop("cs_mostrar", None)
-                st.rerun()
-        with b2:
-            st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
-            if st.button("SALTAR →", key="btn_cs_skip", type="tertiary" if False else "secondary"):
-                st.session_state.shop_step = "confirmed"
-                st.session_state.pop("crosssell_products", None)
-                st.session_state.pop("cs_mostrar", None)
-                st.rerun()
+        # ── Botones de acción con contraste claro ──────────────────────────────
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+
+        btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
+        if st.button(btn_label, key="btn_cs_pagar"):
+            if crosssell_cart and draft_id:
+                with st.spinner("Actualizando tu pedido…"):
+                    ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
+                if ok:
+                    new_url = result.get("invoice_url", checkout_url)
+                    st.session_state["checkout_url"] = new_url
+                    try:
+                        extras_json = json.dumps([{
+                            "nombre":   c["nombre"],
+                            "variante": str(c.get("variant_id","")),
+                            "cantidad": c["cantidad"],
+                            "precio":   c["precio"],
+                        } for c in crosssell_cart], ensure_ascii=False)
+                        ws_ped = get_ws(client, HOJA_PEDIDOS)
+                        if ws_ped:
+                            cell_ped = ws_ped.find(st.session_state.get("pedido_id",""))
+                            if cell_ped:
+                                notas_actuales = ws_ped.cell(cell_ped.row, 14).value or ""
+                                ws_ped.update_cell(cell_ped.row, 14,
+                                    notas_actuales + f" crosssell:{extras_json}")
+                                st.cache_data.clear()
+                    except:
+                        pass
+                else:
+                    st.error(f"Error actualizando pedido: {result}")
+                    st.stop()
+            st.session_state.shop_step = "confirmed"
+            st.session_state.pop("crosssell_products", None)
+            st.session_state.pop("cs_mostrar", None)
+            st.rerun()
+
+        st.markdown(
+            "<div style='text-align:center;margin-top:8px;'>"
+            "<span style='font-size:11px;color:#333;letter-spacing:1px;"
+            "font-family:DM Mono,monospace;cursor:pointer;' "
+            "id='btn_skip_cs'>No gracias, ir al pago sin extras →</span></div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("No gracias →", key="btn_cs_skip"):
+            st.session_state.shop_step = "confirmed"
+            st.session_state.pop("crosssell_products", None)
+            st.session_state.pop("cs_mostrar", None)
+            st.rerun()
+
 
     elif step == "confirmed":
         # Pantalla de confirmación centrada
