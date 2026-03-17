@@ -883,26 +883,42 @@ def vista_admin(client, drive):
         if "admin_tab" not in st.session_state:
             st.session_state.admin_tab = "equipos"
 
+        # CSS para nav buttons según tab activo
+        tab_activo_css = st.session_state.get("admin_tab", "equipos")
+        nav_css = ""
         nav_items = [
-            ("equipos",     "🏆", "EQUIPOS"),
-            ("colecciones", "📅", "COLECCIONES"),
-            ("productos",   "👕", "PRODUCTOS"),
-            ("pedidos",     "📋", "PEDIDOS"),
+            ("equipos",     "🏆  EQUIPOS"),
+            ("colecciones", "📅  COLECCIONES"),
+            ("productos",   "👕  PRODUCTOS"),
+            ("pedidos",     "📋  PEDIDOS"),
         ]
-        for key, icon, label in nav_items:
-            activo = st.session_state.admin_tab == key
-            bg     = "#1A1A1A" if activo else "transparent"
-            color  = "#FFFFFF" if activo else "#555555"
-            border = "border-left:2px solid #FFF;" if activo else "border-left:2px solid transparent;"
-            st.markdown(
-                f"<div style='background:{bg};{border}padding:10px 14px;"
-                f"margin-bottom:2px;border-radius:0 2px 2px 0;cursor:pointer;'>"
-                f"<span style='font-size:10px;letter-spacing:2.5px;"
-                f"color:{color};'>{icon} {label}</span></div>",
-                unsafe_allow_html=True,
-            )
-            if st.button(label, key=f"nav_{key}",
-                         help=label):
+        for key, _ in nav_items:
+            if tab_activo_css == key:
+                nav_css += f"""
+                div[data-testid='stButton']:has(button[key='nav_{key}']) button {{
+                    background: #0A0A0A !important;
+                    color: #FFFFFF !important;
+                    border: none !important;
+                    font-weight: 700 !important;
+                }}"""
+            else:
+                nav_css += f"""
+                div[data-testid='stButton']:has(button[key='nav_{key}']) button {{
+                    background: transparent !important;
+                    color: #888 !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    font-weight: 400 !important;
+                }}
+                div[data-testid='stButton']:has(button[key='nav_{key}']) button:hover {{
+                    color: #0A0A0A !important;
+                    opacity: 1 !important;
+                }}"""
+
+        st.markdown(f"<style>{nav_css}</style>", unsafe_allow_html=True)
+
+        for key, label in nav_items:
+            if st.button(label, key=f"nav_{key}", use_container_width=True):
                 st.session_state.admin_tab = key
                 st.rerun()
 
