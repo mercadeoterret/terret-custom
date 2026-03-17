@@ -1566,6 +1566,9 @@ def vista_admin(client, drive):
                 fecha_hasta = st.date_input("Hasta", value=None, key="fecha_hasta_ped")
 
             df_show = df_ped.copy()
+            # Normalizar Estado — extraer solo la primera palabra (limpia crosssell contaminado)
+            df_show["Estado"] = df_show["Estado"].astype(str).str.split(" ").str[0].str.strip()
+            df_ped["Estado"]  = df_ped["Estado"].astype(str).str.split(" ").str[0].str.strip()
             if filtro_eq  != "Todos": df_show = df_show[df_show["Equipo_Nombre"] == filtro_eq]
             if filtro_col != "Todas": df_show = df_show[df_show["Coleccion_Nombre"] == filtro_col]
             if filtro_est != "Todos": df_show = df_show[df_show["Estado"] == filtro_est]
