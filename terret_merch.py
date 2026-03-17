@@ -1431,19 +1431,19 @@ def vista_tienda(client, drive, codigo_equipo):
         if "modal_prod_id" not in st.session_state:
             st.session_state.modal_prod_id = None
 
-        cols_grid = st.columns(3)
+        cols_grid = st.columns(4)
         for i, (_, prod) in enumerate(productos.iterrows()):
-            with cols_grid[i % 3]:
+            with cols_grid[i % 4]:
                 precio    = float(str(prod.get("Precio", 0)).replace(",", "") or 0)
                 fotos_raw = str(prod.get("Fotos_URLs", "") or "")
                 fotos     = [u.strip() for u in fotos_raw.split(",") if u.strip()]
                 img_src   = fotos[0] if fotos else ""
 
                 img_html = (
-                    f"<img src='{img_src}' style='width:100%;height:200px;"
-                    f"object-fit:cover;border-radius:4px 4px 0 0;'>"
+                    f"<img src='{img_src}' style='width:100%;display:block;"
+                    f"border-radius:4px 4px 0 0;'>"
                     if img_src else
-                    f"<div style='width:100%;height:200px;background:#1a1a1a;"
+                    f"<div style='width:100%;aspect-ratio:1/1;background:#1a1a1a;"
                     f"border-radius:4px 4px 0 0;display:flex;align-items:center;"
                     f"justify-content:center;color:#333;font-size:32px;'>👕</div>"
                 )
