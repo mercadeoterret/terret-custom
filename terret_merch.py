@@ -1586,26 +1586,52 @@ def vista_admin(client, drive):
                 except:
                     prods_str = str(p.get("Productos_JSON", ""))
 
+                # Parsear crosssell extras de Notas
+                notas_raw = str(p.get("Notas", "") or "")
+                notas_limpias = notas_raw.split("crosssell:")[0].strip() if "crosssell:" in notas_raw else notas_raw
+                extras_cs = []
+                if "crosssell:" in notas_raw:
+                    try:
+                        extras_cs = json.loads(notas_raw.split("crosssell:")[1].strip())
+                    except:
+                        extras_cs = []
+
+                extras_str = ""
+                if extras_cs:
+                    extras_str = " · ".join([
+                        f"+{ex.get('nombre','')[:25]} x{ex.get('cantidad',1)}"
+                        for ex in extras_cs
+                    ])
+
+                # Total real = merch + crosssell
+                total_cs_val = sum(float(ex.get("precio", 0)) * int(ex.get("cantidad", 1))
+                                   for ex in extras_cs)
+                total_real = float(str(p.get("Total", 0) or 0)) + total_cs_val
+
                 st.markdown(
                     f"<div style='background:#F5F5F5;border:1px solid #E0E0E0;border-radius:6px;"
                     f"padding:14px 18px;margin-bottom:6px;'>"
                     f"<div style='display:flex;justify-content:space-between;"
                     f"align-items:center;margin-bottom:4px;'>"
                     f"<div><span style='font-weight:600;'>{p.get('Usuario_Nombre','—')}</span>"
-                    f"<span style='color:#666;font-size:12px;margin-left:10px;'>"
+                    f"<span style='color:#888;font-size:12px;margin-left:10px;'>"
                     f"{p.get('Usuario_Email','')}</span></div>"
                     f"<div style='display:flex;gap:10px;align-items:center;'>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:18px;'>"
-                    f"{fmt_precio(p.get('Total',0))}</span>"
+                    f"{fmt_precio(total_real)}</span>"
                     f"<span style='background:{color_estado}22;color:{color_estado};"
                     f"font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:2px;"
                     f"font-family:DM Mono,monospace;'>{estado}</span>"
                     f"</div></div>"
-                    f"<div style='font-size:11px;color:#666;'>"
+                    f"<div style='font-size:11px;color:#888;'>"
                     f"{p.get('Equipo_Nombre','—')} · {p.get('Coleccion_Nombre','—')} · "
                     f"{p.get('Fecha','—')} · ID: {p.get('ID','—')}</div>"
                     f"<div style='font-size:11px;color:#666;margin-top:3px;'>{prods_str}</div>"
-                    f"</div>",
+                    + (f"<div style='font-size:11px;color:#2563EB;margin-top:3px;'>"
+                       f"🛍 Cross-sell: {extras_str}</div>" if extras_str else "")
+                    + (f"<div style='font-size:11px;color:#888;margin-top:3px;'>"
+                       f"📝 {notas_limpias}</div>" if notas_limpias else "")
+                    + f"</div>",
                     unsafe_allow_html=True,
                 )
 
