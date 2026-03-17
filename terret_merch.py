@@ -133,27 +133,38 @@ label, .stTextInput label, .stNumberInput label,
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
 
-/* Jerarquía de botones */
-/* Secundario — outline sutil */
-button[kind="secondary"],
+/* ── Jerarquía de botones cross-sell ── */
+/* Todos los botones base */
+.stButton > button {
+    transition: all 0.15s ease !important;
+}
+/* Botones con key que contienen "cs_add" — AGREGAR */
+button[data-testid*="cs_add"],
 [data-testid="stBaseButton-secondary"] {
     background: transparent !important;
     border: 1px solid #2A2A2A !important;
-    color: #666 !important;
+    color: #777 !important;
     font-size: 11px !important;
-    letter-spacing: 2px !important;
 }
-button[kind="secondary"]:hover,
 [data-testid="stBaseButton-secondary"]:hover {
-    border-color: #555 !important;
-    color: #999 !important;
+    border-color: #666 !important;
+    color: #CCC !important;
     opacity: 1 !important;
 }
-/* Primario — blanco sólido */
-[data-testid="stBaseButton-primary"] {
+/* Botón primario — máximo contraste */
+[data-testid="stBaseButton-primary"],
+button[kind="primary"] {
     background: #FFFFFF !important;
-    color: #0A0A0A !important;
-    font-weight: 600 !important;
+    color: #000000 !important;
+    border: none !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 3px !important;
+    box-shadow: 0 0 0 0 !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: #E0E0E0 !important;
+    opacity: 1 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -2142,8 +2153,9 @@ def vista_tienda(client, drive, codigo_equipo):
         # ── Botones de acción con contraste claro ──────────────────────────────
         st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
+        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
         btn_label = "AGREGAR AL PEDIDO Y PAGAR →" if crosssell_cart else "IR AL PAGO →"
-        if st.button(btn_label, key="btn_cs_pagar"):
+        if st.button(btn_label, key="btn_cs_pagar", type="primary"):
             if crosssell_cart and draft_id:
                 with st.spinner("Actualizando tu pedido…"):
                     ok, result = shopify_agregar_a_draft(draft_id, crosssell_cart)
@@ -2176,13 +2188,11 @@ def vista_tienda(client, drive, codigo_equipo):
             st.rerun()
 
         st.markdown(
-            "<div style='text-align:center;margin-top:8px;'>"
-            "<span style='font-size:11px;color:#333;letter-spacing:1px;"
-            "font-family:DM Mono,monospace;cursor:pointer;' "
-            "id='btn_skip_cs'>No gracias, ir al pago sin extras →</span></div>",
+            "<div style='border-top:1px solid #111;margin-top:16px;padding-top:16px;"
+            "text-align:center;'></div>",
             unsafe_allow_html=True,
         )
-        if st.button("No gracias →", key="btn_cs_skip"):
+        if st.button("Continuar sin agregar →", key="btn_cs_skip"):
             st.session_state.shop_step = "confirmed"
             st.session_state.pop("crosssell_products", None)
             st.session_state.pop("cs_mostrar", None)
