@@ -526,6 +526,64 @@ def tiene_pedidos(df_ped, campo, valor):
         return False
     return not df_ped[df_ped[campo] == valor].empty
 
+# ─── SINCRONIZACIÓN DE PAGOS ─────────────────────────────────────────────────
+def sincronizar_pagos(client):
+    """
+    Consulta Shopify por cada Draft Order PENDIENTE.
+    Si la draft fue completada (tiene order_id), actualiza el estado a PAGADO en Sheets.
+    Retorna (actualizados, errores).
+    """
+    if not SHOPIFY_TOKEN:
+        return 0, ["No hay token de Shopify configurado."]
+
+    ws = get_ws(client, HOJA_PEDIDOS)
+    if not ws:
+        return 0, ["No se pudo acceder a la hoja de Pedidos."]
+
+    df_ped = leer_pedidos(client)
+    if df_ped.empty:
+        return 0, []
+
+    pendientes = df_ped[
+        (df_ped["Estado"] == "PENDIENTE") &
+        (df_ped["Shopify_Draft_ID"].astype(str).str.strip() != "")
+    ]
+
+    if pendientes.empty:
+        return 0, []
+
+    headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
+    actualizados = 0
+    errores = []
+
+    for _, ped in pendientes.iterrows():
+        draft_id = str(ped.get("Shopify_Draft_ID", "")).strip()
+        if not draft_id:
+            continue
+        try:
+            url = f"https://{TIENDA_URL}/admin/api/{API_VERSION}/draft_orders/{draft_id}.json"
+            resp = requests.get(url, headers=headers, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json().get("draft_order", {})
+                order_id = data.get("order_id")
+                status   = data.get("status", "")
+                if order_id or status == "completed":
+                    cell = ws.find(ped["ID"])
+                    if cell:
+                        ws.update_cell(cell.row, 12, str(order_id or ""))  # Shopify_Order_ID
+                        ws.update_cell(cell.row, 14, "PAGADO")             # Estado
+                    actualizados += 1
+            else:
+                errores.append(f"Draft {draft_id}: HTTP {resp.status_code}")
+        except Exception as e:
+            errores.append(f"Draft {draft_id}: {e}")
+
+    if actualizados > 0:
+        st.cache_data.clear()
+
+    return actualizados, errores
+
+
 # ─── SHOPIFY DRAFT ORDERS ─────────────────────────────────────────────────────
 def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
                       coleccion_nombre, pedido_id):
@@ -1168,36 +1226,94 @@ def vista_admin(client, drive):
     # ── TAB 4: PEDIDOS ────────────────────────────────────────────────────────
     with tab4:
         df_ped = leer_pedidos(client)
+        df_col_ped = leer_colecciones(client)
         seccion("PEDIDOS", f"{len(df_ped)} pedidos registrados")
 
         if df_ped.empty:
             st.info("Aún no hay pedidos.")
         else:
+            # ── Métricas ──────────────────────────────────────────────────────
             pagados    = len(df_ped[df_ped["Estado"] == "PAGADO"])
             pendientes = len(df_ped[df_ped["Estado"] == "PENDIENTE"])
             total_cop  = df_ped["Total"].apply(
                 lambda x: float(str(x).replace(",", "")) if x else 0
             ).sum()
+            total_pag  = df_ped[df_ped["Estado"] == "PAGADO"]["Total"].apply(
+                lambda x: float(str(x).replace(",", "")) if x else 0
+            ).sum()
 
-            c1, c2, c3, c4 = st.columns(4)
+            c1, c2, c3, c4, c5 = st.columns(5)
             with c1: st.metric("Total pedidos", len(df_ped))
             with c2: st.metric("Pagados",       pagados)
             with c3: st.metric("Pendientes",    pendientes)
             with c4: st.metric("Valor total",   fmt_precio(total_cop))
+            with c5: st.metric("Cobrado",       fmt_precio(total_pag))
 
-            c1, c2 = st.columns(2)
-            with c1:
-                equipos_list = ["Todos"] + df_ped["Equipo_Nombre"].dropna().unique().tolist()
+            # ── Sincronizar pagos ─────────────────────────────────────────────
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            sc1, sc2 = st.columns([2, 3])
+            with sc1:
+                if st.button("🔄 SINCRONIZAR PAGOS CON SHOPIFY", key="btn_sync"):
+                    with st.spinner("Consultando Shopify…"):
+                        act, errs = sincronizar_pagos(client)
+                    if act > 0:
+                        st.success(f"✅ {act} pedido(s) marcados como PAGADO")
+                    else:
+                        st.info("Sin cambios — ningún pedido pendiente fue completado aún.")
+                    if errs:
+                        for e in errs:
+                            st.warning(e)
+            with sc2:
+                st.markdown(
+                    "<div style='font-size:11px;color:#555;padding:10px 0;'>"
+                    "Consulta Shopify por cada Draft Order pendiente y actualiza "
+                    "automáticamente los que ya fueron pagados.</div>",
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<hr style='border-color:#1a1a1a;margin:16px 0;'>",
+                        unsafe_allow_html=True)
+
+            # ── Filtros ───────────────────────────────────────────────────────
+            seccion("FILTROS Y REPORTE DE PRODUCCIÓN", "")
+            f1, f2, f3 = st.columns(3)
+            with f1:
+                equipos_list = ["Todos"] + sorted(df_ped["Equipo_Nombre"].dropna().unique().tolist())
                 filtro_eq = st.selectbox("Equipo:", equipos_list, key="filtro_eq_ped")
-            with c2:
+            with f2:
+                cols_list = ["Todas"] + sorted(df_ped["Coleccion_Nombre"].dropna().unique().tolist())
+                filtro_col = st.selectbox("Colección:", cols_list, key="filtro_col_ped")
+            with f3:
                 estados    = ["Todos", "PENDIENTE", "PAGADO", "PRODUCCION", "ENVIADO"]
                 filtro_est = st.selectbox("Estado:", estados, key="filtro_est_ped")
 
+            f4, f5 = st.columns(2)
+            with f4:
+                fecha_desde = st.date_input("Desde", value=None, key="fecha_desde_ped")
+            with f5:
+                fecha_hasta = st.date_input("Hasta", value=None, key="fecha_hasta_ped")
+
             df_show = df_ped.copy()
             if filtro_eq  != "Todos": df_show = df_show[df_show["Equipo_Nombre"] == filtro_eq]
+            if filtro_col != "Todas": df_show = df_show[df_show["Coleccion_Nombre"] == filtro_col]
             if filtro_est != "Todos": df_show = df_show[df_show["Estado"] == filtro_est]
+            if fecha_desde:
+                df_show = df_show[pd.to_datetime(df_show["Fecha"], errors="coerce").dt.date >= fecha_desde]
+            if fecha_hasta:
+                df_show = df_show[pd.to_datetime(df_show["Fecha"], errors="coerce").dt.date <= fecha_hasta]
 
-            for _, p in df_show.sort_values("Fecha", ascending=False).iterrows():
+            df_show = df_show.sort_values("Fecha", ascending=False)
+
+            st.markdown(
+                f"<div style='font-size:11px;color:#666;margin-bottom:12px;'>"
+                f"{len(df_show)} pedidos en la selección · "
+                f"Total: <b style='color:#F5F0E8;'>{fmt_precio(df_show['Total'].apply(lambda x: float(str(x).replace(',','')) if x else 0).sum())}</b>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+            # ── Lista de pedidos ──────────────────────────────────────────────
+            for _, p in df_show.iterrows():
                 estado = p.get("Estado", "PENDIENTE")
                 color_estado = {
                     "PAGADO": "#00C853", "PENDIENTE": "#FFB800",
@@ -1205,9 +1321,10 @@ def vista_admin(client, drive):
                 }.get(estado, "#666")
 
                 try:
-                    prods     = json.loads(p.get("Productos_JSON", "[]"))
+                    prods = json.loads(p.get("Productos_JSON", "[]"))
                     prods_str = " · ".join([
-                        f"{pr['nombre']} ({pr.get('talla','')}/{pr.get('color','')}) x{pr['cantidad']}"
+                        f"{pr['nombre']} T:{pr.get('talla','')} x{pr['cantidad']}"
+                        + (f" [{pr['nombre_camiseta']}]" if pr.get('nombre_camiseta') else "")
                         for pr in prods
                     ])
                 except:
@@ -1215,11 +1332,11 @@ def vista_admin(client, drive):
 
                 st.markdown(
                     f"<div style='background:#111;border:1px solid #222;border-radius:6px;"
-                    f"padding:14px 18px;margin-bottom:8px;'>"
+                    f"padding:14px 18px;margin-bottom:6px;'>"
                     f"<div style='display:flex;justify-content:space-between;"
-                    f"align-items:center;margin-bottom:6px;'>"
+                    f"align-items:center;margin-bottom:4px;'>"
                     f"<div><span style='font-weight:600;'>{p.get('Usuario_Nombre','—')}</span>"
-                    f"<span style='color:#666;font-size:12px;margin-left:10px;'>"
+                    f"<span style='color:#555;font-size:12px;margin-left:10px;'>"
                     f"{p.get('Usuario_Email','')}</span></div>"
                     f"<div style='display:flex;gap:10px;align-items:center;'>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:18px;'>"
@@ -1228,23 +1345,66 @@ def vista_admin(client, drive):
                     f"font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:2px;"
                     f"font-family:DM Mono,monospace;'>{estado}</span>"
                     f"</div></div>"
-                    f"<div style='font-size:11px;color:#888;'>"
+                    f"<div style='font-size:11px;color:#666;'>"
                     f"{p.get('Equipo_Nombre','—')} · {p.get('Coleccion_Nombre','—')} · "
                     f"{p.get('Fecha','—')} · ID: {p.get('ID','—')}</div>"
-                    f"<div style='font-size:11px;color:#666;margin-top:4px;'>{prods_str}</div>"
+                    f"<div style='font-size:11px;color:#555;margin-top:3px;'>{prods_str}</div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
 
+            # ── Reporte de producción ─────────────────────────────────────────
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            if st.button("📥 EXPORTAR CSV PRODUCCIÓN", key="btn_export"):
-                csv = df_show.to_csv(index=False).encode("utf-8")
+            seccion("EXPORTAR REPORTE DE PRODUCCIÓN", "")
+
+            if st.button("📥 GENERAR REPORTE", key="btn_export"):
+                # Expandir productos: una fila por producto por pedido
+                filas = []
+                for _, p in df_show.iterrows():
+                    try:
+                        prods = json.loads(p.get("Productos_JSON", "[]"))
+                    except:
+                        prods = []
+                    if not prods:
+                        prods = [{}]
+                    for pr in prods:
+                        filas.append({
+                            "Fecha":             p.get("Fecha", ""),
+                            "Pedido_ID":         p.get("ID", ""),
+                            "Equipo":            p.get("Equipo_Nombre", ""),
+                            "Coleccion":         p.get("Coleccion_Nombre", ""),
+                            "Usuario_Nombre":    p.get("Usuario_Nombre", ""),
+                            "Usuario_Email":     p.get("Usuario_Email", ""),
+                            "Producto":          pr.get("nombre", ""),
+                            "Talla":             pr.get("talla", ""),
+                            "Cantidad":          pr.get("cantidad", ""),
+                            "Nombre_Camiseta":   pr.get("nombre_camiseta", ""),
+                            "Precio_Unitario":   pr.get("precio", ""),
+                            "Subtotal":          float(str(pr.get("precio",0))) * int(pr.get("cantidad",1)) if pr.get("precio") and pr.get("cantidad") else "",
+                            "Total_Pedido":      p.get("Total", ""),
+                            "Estado":            p.get("Estado", ""),
+                            "Shopify_Order_ID":  p.get("Shopify_Order_ID", ""),
+                            "Shopify_Draft_ID":  p.get("Shopify_Draft_ID", ""),
+                        })
+
+                df_reporte = pd.DataFrame(filas)
+                csv = df_reporte.to_csv(index=False).encode("utf-8")
+                eq_label  = filtro_eq.replace(" ", "_") if filtro_eq != "Todos" else "todos"
+                col_label = filtro_col.replace(" ", "_") if filtro_col != "Todas" else "todas"
+                fname = f"reporte_produccion_{eq_label}_{col_label}_{datetime.now().strftime('%Y%m%d')}.csv"
                 st.download_button(
-                    "⬇️ Descargar CSV",
+                    "⬇️ Descargar CSV de producción",
                     csv,
-                    f"pedidos_terret_{datetime.now().strftime('%Y%m%d')}.csv",
+                    fname,
                     "text/csv",
                     key="dl_csv",
+                )
+                st.markdown(
+                    f"<div style='font-size:12px;color:#666;margin-top:8px;'>"
+                    f"{len(filas)} filas · {len(df_show)} pedidos · "
+                    f"Filtro: {filtro_eq} / {filtro_col} / {filtro_est}"
+                    f"</div>",
+                    unsafe_allow_html=True,
                 )
 
 
