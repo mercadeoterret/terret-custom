@@ -176,8 +176,8 @@ button[kind="primary"] {
 # CSS adicional para botones cross-sell via markdown injection
 STYLE_BTN_PRIMARY  = "background:#FFF;color:#0A0A0A;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2.5px;padding:12px 24px;border:none;border-radius:2px;width:100%;cursor:pointer;"
 STYLE_BTN_OUTLINE  = "background:transparent;color:#0A0A0A;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;padding:9px 16px;border:1px solid #D0D0D0;border-radius:2px;width:100%;cursor:pointer;"
-STYLE_BTN_GHOST    = "background:transparent;color:#AAA;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:1px solid #E8E8E8;border-radius:2px;width:100%;cursor:pointer;"
-STYLE_BTN_SKIP     = "background:transparent;color:#BBB;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:none;border-radius:2px;width:100%;cursor:pointer;text-decoration:underline;text-underline-offset:3px;"
+STYLE_BTN_GHOST    = "background:transparent;color:#777;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:1px solid #E8E8E8;border-radius:2px;width:100%;cursor:pointer;"
+STYLE_BTN_SKIP     = "background:transparent;color:#666;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:8px 16px;border:none;border-radius:2px;width:100%;cursor:pointer;text-decoration:underline;text-underline-offset:3px;"
 
 
 # ─── GOOGLE AUTH ──────────────────────────────────────────────────────────────
@@ -833,8 +833,21 @@ def crear_draft_order(items, usuario_email, usuario_nombre, equipo_nombre,
 
 
 # ─── UI HELPERS ───────────────────────────────────────────────────────────────
+def contraste_claro(hex_color, fallback="#0A0A0A"):
+    """Si el color es demasiado claro para fondo blanco, usa el fallback."""
+    try:
+        h = hex_color.lstrip("#")
+        if len(h) == 3:
+            h = h[0]*2 + h[1]*2 + h[2]*2
+        r, g, b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
+        luminance = (0.299*r + 0.587*g + 0.114*b) / 255
+        return fallback if luminance > 0.6 else hex_color
+    except:
+        return fallback
+
+
 def seccion(titulo, subtitulo=""):
-    sub = (f"<div style='font-size:10px;color:#999;letter-spacing:2px;margin-top:4px;"
+    sub = (f"<div style='font-size:10px;color:#666;letter-spacing:2px;margin-top:4px;"
            f"font-family:DM Mono,monospace;'>{subtitulo}</div>") if subtitulo else ""
     st.markdown(
         f"<div style='margin:36px 0 20px 0;padding-bottom:14px;border-bottom:1px solid #1E1E1E;'>"
@@ -861,7 +874,7 @@ def vista_admin(client, drive):
             unsafe_allow_html=True,
         )
         st.markdown(
-            "<div style='font-size:9px;color:#BBB;letter-spacing:3px;"
+            "<div style='font-size:9px;color:#666;letter-spacing:3px;"
             "margin-bottom:20px;'>MERCH ADMIN</div>",
             unsafe_allow_html=True,
         )
@@ -897,7 +910,7 @@ def vista_admin(client, drive):
                     unsafe_allow_html=True)
         st.markdown(
             "<a href='https://terret.co' target='_blank' "
-            "style='font-size:10px;color:#BBB;letter-spacing:1px;"
+            "style='font-size:10px;color:#666;letter-spacing:1px;"
             "text-decoration:none;'>terret.co ↗</a>",
             unsafe_allow_html=True,
         )
@@ -910,7 +923,7 @@ def vista_admin(client, drive):
                    "productos": "👕 PRODUCTOS", "pedidos": "📋 PEDIDOS"}
     st.markdown(
         f"<div style='border-bottom:1px solid #E8E8E8;padding-bottom:12px;"
-        f"margin-bottom:4px;font-size:10px;color:#AAA;letter-spacing:3px;'>"
+        f"margin-bottom:4px;font-size:10px;color:#777;letter-spacing:3px;'>"
         f"{nombres_tab.get(tab_activo,'')}</div>",
         unsafe_allow_html=True,
     )
@@ -941,7 +954,7 @@ def vista_admin(client, drive):
                             st.markdown(
                                 "<div style='width:80px;height:80px;background:#F0F0F0;"
                                 "border-radius:4px;display:flex;align-items:center;"
-                                "justify-content:center;color:#BBB;font-size:24px;'>🏆</div>",
+                                "justify-content:center;color:#666;font-size:24px;'>🏆</div>",
                                 unsafe_allow_html=True,
                             )
                         logo_file = st.file_uploader(
@@ -961,7 +974,7 @@ def vista_admin(client, drive):
                     with c2:
                         pin_actual = str(eq.get("PIN", "") or "—")
                         st.markdown(
-                            f"<div style='font-size:12px;color:#888;line-height:2;'>"
+                            f"<div style='font-size:12px;color:#666;line-height:2;'>"
                             f"<b style='color:#0A0A0A;'>Color primario:</b> "
                             f"<span style='background:{color};padding:2px 14px;"
                             f"border-radius:2px;'>&nbsp;</span> {color}<br>"
@@ -1004,7 +1017,7 @@ def vista_admin(client, drive):
                         with bb:
                             if tiene_pedidos(df_ped_eq, "Equipo_ID", eq["ID"]):
                                 st.markdown(
-                                    "<div style='font-size:10px;color:#888;padding:8px 0;'>"
+                                    "<div style='font-size:10px;color:#666;padding:8px 0;'>"
                                     "⚠️ Tiene pedidos — solo se puede desactivar</div>",
                                     unsafe_allow_html=True,
                                 )
@@ -1038,16 +1051,16 @@ def vista_admin(client, drive):
                         c1, c2, c3 = st.columns([3, 2, 1])
                         with c1:
                             st.markdown(
-                                f"<div style='font-size:13px;color:#999;'>"
+                                f"<div style='font-size:13px;color:#666;'>"
                                 f"<b style='color:#777;'>{eq.get('Nombre','')}</b> · "
                                 f"<span style='font-family:DM Mono,monospace;font-size:11px;'>"
                                 f"{eq.get('Codigo','')}</span></div>"
-                                f"<div style='font-size:11px;color:#AAA;'>PIN: {pin_actual}</div>",
+                                f"<div style='font-size:11px;color:#777;'>PIN: {pin_actual}</div>",
                                 unsafe_allow_html=True,
                             )
                         with c2:
                             st.markdown(
-                                "<div style='font-size:11px;color:#AAA;padding:8px 0;'>"
+                                "<div style='font-size:11px;color:#777;padding:8px 0;'>"
                                 "⚫ INACTIVO</div>",
                                 unsafe_allow_html=True,
                             )
@@ -1144,7 +1157,7 @@ def vista_admin(client, drive):
                                 f"<div style='background:#F5F5F5;border:1px solid #E0E0E0;"
                                 f"border-radius:4px;padding:10px 14px;'>"
                                 f"<div style='font-weight:600;'>{col.get('Nombre','')}</div>"
-                                f"<div style='font-size:11px;color:#888;'>"
+                                f"<div style='font-size:11px;color:#666;'>"
                                 f"Temporada: {col.get('Temporada','—')} · "
                                 f"Corte: {col.get('Fecha_Corte','—')}</div>"
                                 f"</div>",
@@ -1168,7 +1181,7 @@ def vista_admin(client, drive):
                         df_ped_col = leer_pedidos(client)
                         if tiene_pedidos(df_ped_col, "Coleccion_ID", col["ID"]):
                             st.markdown(
-                                "<div style='font-size:10px;color:#999;margin-bottom:6px;'>"
+                                "<div style='font-size:10px;color:#666;margin-bottom:6px;'>"
                                 "⚠️ Tiene pedidos — solo desactivar</div>",
                                 unsafe_allow_html=True,
                             )
@@ -1261,7 +1274,7 @@ def vista_admin(client, drive):
                                 st.image(fotos[0][1], use_container_width=True)
                                 if len(fotos) > 1:
                                     st.markdown(
-                                        f"<div style='font-size:11px;color:#888;'>"
+                                        f"<div style='font-size:11px;color:#666;'>"
                                         f"+{len(fotos)-1} fotos más en Drive</div>",
                                         unsafe_allow_html=True,
                                     )
@@ -1269,14 +1282,14 @@ def vista_admin(client, drive):
                                 st.markdown(
                                     "<div style='height:120px;background:#F0F0F0;"
                                     "border-radius:4px;display:flex;align-items:center;"
-                                    "justify-content:center;color:#BBB;font-size:28px;'>"
+                                    "justify-content:center;color:#666;font-size:28px;'>"
                                     "👕</div>",
                                     unsafe_allow_html=True,
                                 )
                         with c2:
                             personalizable = p.get("Personalizable", "NO") == "SI"
                             st.markdown(
-                                f"<div style='font-size:12px;color:#888;line-height:2;'>"
+                                f"<div style='font-size:12px;color:#666;line-height:2;'>"
                                 f"<b style='color:#0A0A0A;'>Tallas:</b> {p.get('Tallas','—')}<br>"
                                 f"<b style='color:#0A0A0A;'>Colores:</b> {p.get('Colores','—')}<br>"
                                 f"<b style='color:#0A0A0A;'>Personalizable:</b> "
@@ -1336,7 +1349,7 @@ def vista_admin(client, drive):
                         with pb:
                             if tiene_pedidos(df_ped_pro, "Productos_JSON", p["ID"]):
                                 st.markdown(
-                                    "<div style='font-size:10px;color:#999;padding:8px 0;'>"
+                                    "<div style='font-size:10px;color:#666;padding:8px 0;'>"
                                     "⚠️ En pedidos — solo desactivar</div>",
                                     unsafe_allow_html=True,
                                 )
@@ -1416,7 +1429,7 @@ def vista_admin(client, drive):
                         prod_tallas = ",".join(st.session_state.tallas_lista)
                     with c2:
                         st.markdown(
-                            "<div style='font-size:12px;color:#AAA;padding:8px 0;'>"
+                            "<div style='font-size:12px;color:#777;padding:8px 0;'>"
                             "🎨 Colores — deshabilitado temporalmente</div>",
                             unsafe_allow_html=True,
                         )
@@ -1508,7 +1521,7 @@ def vista_admin(client, drive):
                             st.warning(e)
             with sc2:
                 st.markdown(
-                    "<div style='font-size:11px;color:#999;padding:10px 0;'>"
+                    "<div style='font-size:11px;color:#666;padding:10px 0;'>"
                     "Consulta Shopify por cada Draft Order pendiente y actualiza "
                     "automáticamente los que ya fueron pagados.</div>",
                     unsafe_allow_html=True,
@@ -1548,7 +1561,7 @@ def vista_admin(client, drive):
             df_show = df_show.sort_values("Fecha", ascending=False)
 
             st.markdown(
-                f"<div style='font-size:11px;color:#888;margin-bottom:12px;'>"
+                f"<div style='font-size:11px;color:#666;margin-bottom:12px;'>"
                 f"{len(df_show)} pedidos en la selección · "
                 f"Total: <b style='color:#0A0A0A;'>{fmt_precio(df_show['Total'].apply(lambda x: float(str(x).replace(',','')) if x else 0).sum())}</b>"
                 f"</div>",
@@ -1579,7 +1592,7 @@ def vista_admin(client, drive):
                     f"<div style='display:flex;justify-content:space-between;"
                     f"align-items:center;margin-bottom:4px;'>"
                     f"<div><span style='font-weight:600;'>{p.get('Usuario_Nombre','—')}</span>"
-                    f"<span style='color:#999;font-size:12px;margin-left:10px;'>"
+                    f"<span style='color:#666;font-size:12px;margin-left:10px;'>"
                     f"{p.get('Usuario_Email','')}</span></div>"
                     f"<div style='display:flex;gap:10px;align-items:center;'>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:18px;'>"
@@ -1588,10 +1601,10 @@ def vista_admin(client, drive):
                     f"font-size:9px;letter-spacing:1.5px;padding:3px 8px;border-radius:2px;"
                     f"font-family:DM Mono,monospace;'>{estado}</span>"
                     f"</div></div>"
-                    f"<div style='font-size:11px;color:#888;'>"
+                    f"<div style='font-size:11px;color:#666;'>"
                     f"{p.get('Equipo_Nombre','—')} · {p.get('Coleccion_Nombre','—')} · "
                     f"{p.get('Fecha','—')} · ID: {p.get('ID','—')}</div>"
-                    f"<div style='font-size:11px;color:#999;margin-top:3px;'>{prods_str}</div>"
+                    f"<div style='font-size:11px;color:#666;margin-top:3px;'>{prods_str}</div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
@@ -1671,7 +1684,7 @@ def vista_admin(client, drive):
                     key="dl_csv",
                 )
                 st.markdown(
-                    f"<div style='font-size:12px;color:#888;margin-top:8px;'>"
+                    f"<div style='font-size:12px;color:#666;margin-top:8px;'>"
                     f"{len(filas)} filas · {len(df_show)} pedidos · "
                     f"Filtro: {filtro_eq} / {filtro_col} / {filtro_est}"
                     f"</div>",
@@ -1691,7 +1704,7 @@ def vista_tienda(client, drive, codigo_equipo):
             "<div style='max-width:480px;margin:120px auto;text-align:center;'>"
             "<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
             "letter-spacing:3px;margin-bottom:12px;'>COLECCIÓN NO ENCONTRADA</div>"
-            "<div style='color:#888;font-size:14px;'>El código no es válido.<br>"
+            "<div style='color:#666;font-size:14px;'>El código no es válido.<br>"
             "Verifica con tu coach o con Térret.</div></div>",
             unsafe_allow_html=True,
         )
@@ -1722,7 +1735,7 @@ def vista_tienda(client, drive, codigo_equipo):
             f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
             f"letter-spacing:5px;color:{eq_color};margin-bottom:4px;line-height:1;'>"
             f"{eq_nombre.upper()}</div>"
-            f"<div style='font-size:10px;color:#AAA;letter-spacing:3px;"
+            f"<div style='font-size:10px;color:#777;letter-spacing:3px;"
             f"margin-bottom:36px;font-family:DM Mono,monospace;'>COLECCIÓN EXCLUSIVA</div>"
             f"</div>",
             unsafe_allow_html=True,
@@ -1753,7 +1766,7 @@ def vista_tienda(client, drive, codigo_equipo):
         f"padding:16px 0 16px 0;border-bottom:1px solid #1E1E1E;margin-bottom:32px;'>"
         f"<a href='https://terret.co' target='_blank' style='text-decoration:none;'>"
         f"{LOGO_SVG}</a>"
-        f"<div style='font-size:10px;color:#AAA;letter-spacing:2px;"
+        f"<div style='font-size:10px;color:#777;letter-spacing:2px;"
         f"font-family:DM Mono,monospace;'>COLECCIÓN EXCLUSIVA</div>"
         f"</div>",
         unsafe_allow_html=True,
@@ -1770,8 +1783,8 @@ def vista_tienda(client, drive, codigo_equipo):
         f"{logo_html}"
         f"<div>"
         f"<div style='font-family:Bebas Neue,sans-serif;font-size:40px;"
-        f"letter-spacing:5px;color:{eq_color};line-height:1;'>{eq_nombre.upper()}</div>"
-        f"<div style='font-size:11px;color:#999;letter-spacing:2px;"
+        f"letter-spacing:5px;color:{contraste_claro(eq_color)};line-height:1;'>{eq_nombre.upper()}</div>"
+        f"<div style='font-size:11px;color:#666;letter-spacing:2px;"
         f"font-family:DM Mono,monospace;margin-top:4px;'>MERCH PERSONALIZADO</div>"
         f"</div></div>",
         unsafe_allow_html=True,
@@ -1779,7 +1792,7 @@ def vista_tienda(client, drive, codigo_equipo):
 
     if eq_desc:
         st.markdown(
-            f"<div style='color:#888;font-size:14px;margin-bottom:20px;'>{eq_desc}</div>",
+            f"<div style='color:#666;font-size:14px;margin-bottom:20px;'>{eq_desc}</div>",
             unsafe_allow_html=True,
         )
 
@@ -1825,7 +1838,7 @@ def vista_tienda(client, drive, codigo_equipo):
 
     if cols_activas.empty:
         st.markdown(
-            "<div style='text-align:center;padding:80px;color:#888;'>"
+            "<div style='text-align:center;padding:80px;color:#666;'>"
             "No hay colecciones activas en este momento.<br>"
             "Contacta a Térret para más información.</div>",
             unsafe_allow_html=True,
@@ -1852,9 +1865,9 @@ def vista_tienda(client, drive, codigo_equipo):
 
         if not st.session_state.carrito:
             st.markdown(
-                "<div style='font-size:9px;color:#BBB;letter-spacing:3px;"
+                "<div style='font-size:9px;color:#666;letter-spacing:3px;"
                 "margin-bottom:16px;'>CARRITO</div>"
-                "<div style='font-size:12px;color:#BBB;padding:8px 0;'>"
+                "<div style='font-size:12px;color:#666;padding:8px 0;'>"
                 "Agrega productos para continuar.</div>",
                 unsafe_allow_html=True,
             )
@@ -1864,7 +1877,7 @@ def vista_tienda(client, drive, codigo_equipo):
             if step == "shop":
                 # ── Step 1: resumen carrito + botón IR AL PAGO ────────────────
                 st.markdown(
-                    f"<div style='font-size:9px;color:#888;letter-spacing:3px;"
+                    f"<div style='font-size:9px;color:#666;letter-spacing:3px;"
                     f"margin-bottom:12px;'>CARRITO ({n_items})</div>",
                     unsafe_allow_html=True,
                 )
@@ -1885,7 +1898,7 @@ def vista_tienda(client, drive, codigo_equipo):
                             f"{img_sb}"
                             f"<div>"
                             f"<div style='font-size:12px;color:#0A0A0A;font-weight:500;'>{item['nombre']}</div>"
-                            f"<div style='font-size:10px;color:#999;margin-top:2px;'>"
+                            f"<div style='font-size:10px;color:#666;margin-top:2px;'>"
                             f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
                             f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
                             f"color:{eq_color};margin-top:4px;'>{fmt_precio(subtotal)}</div>"
@@ -1900,7 +1913,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 st.markdown(
                     f"<div style='display:flex;justify-content:space-between;"
                     f"align-items:center;padding:14px 0 20px 0;'>"
-                    f"<span style='font-size:9px;color:#999;letter-spacing:2px;'>TOTAL</span>"
+                    f"<span style='font-size:9px;color:#666;letter-spacing:2px;'>TOTAL</span>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:22px;"
                     f"color:{eq_color};'>{fmt_precio(total_sb)}</span></div>",
                     unsafe_allow_html=True,
@@ -1915,7 +1928,7 @@ def vista_tienda(client, drive, codigo_equipo):
             elif step == "checkout":
                 # ── Step 2: datos del usuario (solo en sidebar) ───────────────
                 st.markdown(
-                    "<div style='font-size:9px;color:#888;letter-spacing:3px;"
+                    "<div style='font-size:9px;color:#666;letter-spacing:3px;"
                     "margin-bottom:4px;'>PASO 2 DE 2</div>"
                     "<div style='font-size:14px;color:#0A0A0A;font-weight:600;"
                     "margin-bottom:16px;'>Tus datos</div>",
@@ -1925,7 +1938,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 st.markdown(
                     f"<div style='background:#F5F5F5;border-radius:3px;padding:10px 12px;"
                     f"margin-bottom:16px;'>"
-                    f"<div style='font-size:10px;color:#999;'>{n_items} producto(s)</div>"
+                    f"<div style='font-size:10px;color:#666;'>{n_items} producto(s)</div>"
                     f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
                     f"color:{eq_color};'>{fmt_precio(total_sb)}</div>"
                     f"</div>",
@@ -2002,7 +2015,7 @@ def vista_tienda(client, drive, codigo_equipo):
                     unsafe_allow_html=True)
         st.markdown(
             "<a href='https://terret.co' target='_blank' "
-            "style='font-size:10px;color:#BBB;letter-spacing:1px;"
+            "style='font-size:10px;color:#666;letter-spacing:1px;"
             "text-decoration:none;'>terret.co ↗</a>",
             unsafe_allow_html=True,
         )
@@ -2018,12 +2031,12 @@ def vista_tienda(client, drive, codigo_equipo):
         # Header
         st.markdown(
             f"<div style='text-align:center;padding:24px 0 32px 0;'>"
-            f"<div style='font-size:9px;color:#AAA;letter-spacing:3px;"
+            f"<div style='font-size:9px;color:#777;letter-spacing:3px;"
             f"font-family:DM Mono,monospace;margin-bottom:8px;'>"
             f"PEDIDO {pedido_id_conf} REGISTRADO</div>"
             f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
             f"letter-spacing:4px;color:#0A0A0A;margin-bottom:8px;'>COMPLETA TU PEDIDO</div>"
-            f"<div style='font-size:13px;color:#AAA;'>"
+            f"<div style='font-size:13px;color:#777;'>"
             f"Productos Térret con envío en el mismo pedido</div>"
             f"</div>",
             unsafe_allow_html=True,
@@ -2040,7 +2053,7 @@ def vista_tienda(client, drive, codigo_equipo):
 
         if not productos_cs:
             st.markdown(
-                "<div style='text-align:center;color:#BBB;padding:40px;'>"
+                "<div style='text-align:center;color:#666;padding:40px;'>"
                 "No hay productos disponibles en este momento.</div>",
                 unsafe_allow_html=True,
             )
@@ -2123,31 +2136,31 @@ def vista_tienda(client, drive, codigo_equipo):
                 f"<div style='display:flex;align-items:center;gap:10px;'>"
                 f"<img src='{c['imagen']}' style='width:36px;height:36px;object-fit:cover;"
                 f"border-radius:2px;' onerror='this.style.display=\"none\"'>"
-                f"<span style='font-size:12px;color:#888;'>{c['nombre'][:30]}…" if len(c['nombre'])>30 else
+                f"<span style='font-size:12px;color:#666;'>{c['nombre'][:30]}…" if len(c['nombre'])>30 else
                 f"<div style='display:flex;justify-content:space-between;"
                 f"align-items:center;padding:6px 0;border-bottom:1px solid #E8E8E8;'>"
                 f"<div style='display:flex;align-items:center;gap:10px;'>"
                 f"<img src='{c['imagen']}' style='width:36px;height:36px;object-fit:cover;"
                 f"border-radius:2px;' onerror='this.style.display=\"none\"'>"
-                f"<span style='font-size:12px;color:#888;'>{c['nombre']}"
+                f"<span style='font-size:12px;color:#666;'>{c['nombre']}"
                 for c in crosssell_cart
             ])
             st.markdown(
                 f"<div style='background:#F5F5F5;border:1px solid #E8E8E8;"
                 f"border-radius:3px;padding:14px 16px;margin:16px 0 8px 0;'>"
-                f"<div style='font-size:9px;color:#999;letter-spacing:2px;"
+                f"<div style='font-size:9px;color:#666;letter-spacing:2px;"
                 f"margin-bottom:10px;'>EXTRAS SELECCIONADOS</div>"
                 + "".join([
                     f"<div style='display:flex;justify-content:space-between;"
                     f"align-items:center;padding:5px 0;'>"
-                    f"<span style='font-size:12px;color:#888;'>{c['nombre'][:35]}{'…' if len(c['nombre'])>35 else ''}</span>"
+                    f"<span style='font-size:12px;color:#666;'>{c['nombre'][:35]}{'…' if len(c['nombre'])>35 else ''}</span>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:16px;"
                     f"color:#0A0A0A;'>{fmt_precio(c['precio'])}</span></div>"
                     for c in crosssell_cart
                 ])
                 + f"<div style='border-top:1px solid #E0E0E0;margin-top:8px;padding-top:10px;"
                 f"display:flex;justify-content:space-between;align-items:center;'>"
-                f"<span style='font-size:9px;color:#999;letter-spacing:2px;'>EXTRA TOTAL</span>"
+                f"<span style='font-size:9px;color:#666;letter-spacing:2px;'>EXTRA TOTAL</span>"
                 f"<span style='font-family:Bebas Neue,sans-serif;font-size:20px;"
                 f"color:{eq_color};'>{fmt_precio(total_cs)}</span>"
                 f"</div></div>",
@@ -2174,7 +2187,7 @@ def vista_tienda(client, drive, codigo_equipo):
           .btn-primary:hover {{ background:#333333; }}
           .btn-skip {{
             display:block; width:100%; padding:10px 24px;
-            background:transparent; color:#BBB333;
+            background:transparent; color:#666333;
             font-family:'Bebas Neue',sans-serif;
             font-size:11px; letter-spacing:2px;
             border:none; cursor:pointer;
@@ -2182,7 +2195,7 @@ def vista_tienda(client, drive, codigo_equipo):
             text-decoration:underline;
             text-underline-offset:3px;
           }}
-          .btn-skip:hover {{ color:#888; }}
+          .btn-skip:hover {{ color:#666; }}
         </style>
         <button class='btn-primary' onclick=\"window.parent.document.querySelector('[data-testid=stButton] button[kind=secondaryFormSubmit], [data-testid=stButton]:nth-of-type(1) button').click()\">→ {btn_label}</button>
         <button class='btn-skip' onclick=\"window.parent.document.querySelectorAll('[data-testid=stButton] button')[document.querySelectorAll('[data-testid=stButton] button').length-1]?.click()\">Continuar sin agregar</button>
@@ -2245,9 +2258,9 @@ def vista_tienda(client, drive, codigo_equipo):
             f"<div style='font-size:48px;margin-bottom:16px;'>✅</div>"
             f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
             f"letter-spacing:4px;color:#0A0A0A;margin-bottom:8px;'>PEDIDO REGISTRADO</div>"
-            f"<div style='font-size:11px;color:#999;letter-spacing:2px;"
+            f"<div style='font-size:11px;color:#666;letter-spacing:2px;"
             f"margin-bottom:32px;font-family:DM Mono,monospace;'>{pedido_id_conf}</div>"
-            f"<div style='color:#999;font-size:13px;line-height:1.9;margin-bottom:32px;'>"
+            f"<div style='color:#666;font-size:13px;line-height:1.9;margin-bottom:32px;'>"
             f"Tu pedido quedó registrado.<br>"
             f"Completa el pago en Shopify para confirmar tu compra.</div>"
             f"<a href='{checkout_url}' target='_blank' "
@@ -2277,7 +2290,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 f"align-items:center;padding:12px 0;border-bottom:1px solid #E8E8E8;'>"
                 f"<div>"
                 f"<div style='font-size:13px;color:#0A0A0A;font-weight:500;'>{item['nombre']}</div>"
-                f"<div style='font-size:11px;color:#999;margin-top:2px;'>"
+                f"<div style='font-size:11px;color:#666;margin-top:2px;'>"
                 f"Talla: {item['talla']} · Cantidad: {item['cantidad']}{nombre_cam}</div>"
                 f"</div>"
                 f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
@@ -2288,7 +2301,7 @@ def vista_tienda(client, drive, codigo_equipo):
         st.markdown(
             f"<div style='display:flex;justify-content:space-between;align-items:center;"
             f"padding:20px 0;margin-top:8px;'>"
-            f"<span style='font-size:10px;color:#AAA;letter-spacing:3px;'>TOTAL</span>"
+            f"<span style='font-size:10px;color:#777;letter-spacing:3px;'>TOTAL</span>"
             f"<span style='font-family:Bebas Neue,sans-serif;font-size:32px;"
             f"color:{eq_color};'>{fmt_precio(total_ch)}</span>"
             f"</div>",
@@ -2316,7 +2329,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 f"<div style='margin:40px 0 12px 0;padding-bottom:14px;"
                 f"border-bottom:1px solid #E8E8E8;'>"
                 f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
-                f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
+                f"letter-spacing:4px;color:#0A0A0A;'>{col_nombre.upper()}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -2339,9 +2352,9 @@ def vista_tienda(client, drive, codigo_equipo):
   .cd-wrap {{ display:flex; gap:16px; align-items:flex-end; font-family:'Bebas Neue',sans-serif; }}
   .cd-unit {{ text-align:center; }}
   .cd-num {{ font-size:36px; color:#FFB800; line-height:1; min-width:44px; }}
-  .cd-label {{ font-size:8px; color:#999; letter-spacing:2px; margin-top:4px; font-family:monospace; }}
-  .cd-sep {{ font-size:24px; color:#BBB; padding-bottom:10px; }}
-  .cd-title {{ font-size:9px; color:#999; letter-spacing:2px; margin-bottom:10px;
+  .cd-label {{ font-size:8px; color:#666; letter-spacing:2px; margin-top:4px; font-family:monospace; }}
+  .cd-sep {{ font-size:24px; color:#666; padding-bottom:10px; }}
+  .cd-title {{ font-size:9px; color:#666; letter-spacing:2px; margin-bottom:10px;
                font-family:monospace; text-transform:uppercase; }}
 </style>
 <div class="cd-title">Cierre de pedidos</div>
@@ -2374,7 +2387,7 @@ def vista_tienda(client, drive, codigo_equipo):
 """, height=80)
             if productos.empty:
                 st.markdown(
-                    "<div style='color:#999;font-size:13px;padding:20px 0;'>"
+                    "<div style='color:#666;font-size:13px;padding:20px 0;'>"
                     "Sin productos en esta colección aún.</div>",
                     unsafe_allow_html=True,
                 )
@@ -2398,7 +2411,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         if img_src else
                         f"<div style='width:100%;aspect-ratio:1/1;background:#F0F0F0;"
                         f"border-radius:4px 4px 0 0;display:flex;align-items:center;"
-                        f"justify-content:center;color:#BBB;font-size:32px;'>👕</div>"
+                        f"justify-content:center;color:#666;font-size:32px;'>👕</div>"
                     )
                     desc = str(prod.get("Descripcion", "") or "")
                     desc_short = desc[:60] + "…" if len(desc) > 60 else desc
@@ -2412,7 +2425,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         f"<div style='font-size:13px;font-weight:500;color:#0A0A0A;"
                         f"margin-bottom:3px;letter-spacing:0.3px;'>"
                         f"{prod.get('Nombre','')}</div>"
-                        f"<div style='font-size:11px;color:#999;margin-bottom:10px;"
+                        f"<div style='font-size:11px;color:#666;margin-bottom:10px;"
                         f"line-height:1.5;'>{desc_short}</div>"
                         f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
                         f"color:{eq_color};letter-spacing:1px;'>{fmt_precio(precio)}</div>"
@@ -2457,13 +2470,13 @@ def vista_tienda(client, drive, codigo_equipo):
                                 st.markdown(
                                     "<div style='height:280px;background:#F0F0F0;"
                                     "border-radius:4px;display:flex;align-items:center;"
-                                    "justify-content:center;color:#BBB;font-size:40px;'>👕</div>",
+                                    "justify-content:center;color:#666;font-size:40px;'>👕</div>",
                                     unsafe_allow_html=True,
                                 )
                         with mc2:
                             if desc:
                                 st.markdown(
-                                    f"<div style='color:#888;font-size:13px;"
+                                    f"<div style='color:#666;font-size:13px;"
                                     f"margin-bottom:20px;line-height:1.7;'>{desc}</div>",
                                     unsafe_allow_html=True,
                                 )
@@ -2508,10 +2521,10 @@ def vista_tienda(client, drive, codigo_equipo):
         f"<div style='border-top:1px solid #1E1E1E;margin-top:64px;padding:32px 0;"
         f"text-align:center;'>"
         f"<div style='margin-bottom:16px;'>{LOGO_SVG}</div>"
-        f"<div style='font-size:10px;color:#BBB;letter-spacing:2px;"
+        f"<div style='font-size:10px;color:#666;letter-spacing:2px;"
         f"font-family:DM Mono,monospace;'>"
         f"<a href='https://terret.co' target='_blank' "
-        f"style='color:#BBB;text-decoration:none;'>terret.co</a>"
+        f"style='color:#666;text-decoration:none;'>terret.co</a>"
         f" · MERCH PERSONALIZADO</div>"
         f"</div>",
         unsafe_allow_html=True,
@@ -2523,7 +2536,7 @@ def login_admin():
     st.markdown(
         f"<div style='max-width:360px;margin:80px auto;text-align:center;'>"
         f"<div style='margin-bottom:40px;'>{LOGO_SVG}</div>"
-        f"<div style='font-size:10px;color:#AAA;letter-spacing:3px;margin-bottom:40px;"
+        f"<div style='font-size:10px;color:#777;letter-spacing:3px;margin-bottom:40px;"
         f"font-family:DM Mono,monospace;'>PANEL DE ADMINISTRACIÓN</div>"
         f"</div>",
         unsafe_allow_html=True,
@@ -2572,16 +2585,16 @@ def main():
         "<div style='font-family:Bebas Neue,sans-serif;font-size:52px;"
         "letter-spacing:6px;margin-bottom:6px;'>⚡ TÉRRET</div>"
         "<div style='font-family:Bebas Neue,sans-serif;font-size:24px;"
-        "letter-spacing:4px;color:#888;margin-bottom:28px;'>MERCH PERSONALIZADO</div>"
-        "<div style='color:#888;font-size:14px;line-height:1.9;margin-bottom:40px;'>"
+        "letter-spacing:4px;color:#666;margin-bottom:28px;'>MERCH PERSONALIZADO</div>"
+        "<div style='color:#666;font-size:14px;line-height:1.9;margin-bottom:40px;'>"
         "Este portal es exclusivo para equipos con colección personalizada.<br>"
         "Si tu equipo tiene una colección, ingresa con el enlace que te compartió tu coach."
         "</div>"
         "<div style='background:#F5F5F5;border:1px solid #E0E0E0;border-radius:6px;"
         "padding:20px;text-align:left;'>"
-        "<div style='font-size:11px;color:#888;letter-spacing:2px;margin-bottom:12px;'>"
+        "<div style='font-size:11px;color:#666;letter-spacing:2px;margin-bottom:12px;'>"
         "¿ERES COACH O ADMINISTRADOR DE ÉQUIPO?</div>"
-        "<div style='font-size:13px;color:#888;'>"
+        "<div style='font-size:13px;color:#666;'>"
         "Contacta a Térret para crear tu colección personalizada.<br>"
         "<a href='https://terret.co' style='color:#0A0A0A;'>terret.co</a>"
         "</div></div></div>",
