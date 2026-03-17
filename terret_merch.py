@@ -373,12 +373,12 @@ def leer_pedidos(_client):
                  "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
     if not ws:
         return pd.DataFrame()
-    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
+    data = ws.get_all_records(expected_headers=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID", "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email", "Productos_JSON", "Total", "Shopify_Draft_ID", "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas", "Crosssell_JSON"])
     return pd.DataFrame(data) if data else pd.DataFrame(
         columns=["ID", "Fecha", "Equipo_ID", "Equipo_Nombre", "Coleccion_ID",
                  "Coleccion_Nombre", "Usuario_Nombre", "Usuario_Email",
                  "Productos_JSON", "Total", "Shopify_Draft_ID",
-                 "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas"])
+                 "Shopify_Order_ID", "Invoice_URL", "Estado", "Notas", "Crosssell_JSON"])
 
 
 def guardar_equipo(client, eq):
@@ -1623,6 +1623,9 @@ def vista_admin(client, drive):
                         cs_raw = notas_limpias.split("crosssell:")[1].strip()
                         notas_limpias = notas_limpias.split("crosssell:")[0].strip()
                 if cs_raw:
+                    # Strip "crosssell:" prefix if present (pedidos viejos)
+                    if cs_raw.startswith("crosssell:"):
+                        cs_raw = cs_raw[len("crosssell:"):]
                     try:
                         extras_cs = json.loads(cs_raw)
                     except:
