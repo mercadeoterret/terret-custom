@@ -1611,15 +1611,20 @@ def vista_admin(client, drive):
                 except:
                     prods_str = str(p.get("Productos_JSON", ""))
 
-                # Parsear crosssell extras — buscar en Notas o en Estado (pedidos viejos con bug)
-                notas_raw = str(p.get("Notas", "") or "")
-                if not "crosssell:" in notas_raw and extra_en_estado:
-                    notas_raw = extra_en_estado
-                notas_limpias = notas_raw.split("crosssell:")[0].strip() if "crosssell:" in notas_raw else notas_raw
+                # Leer crosssell de su columna propia
+                notas_limpias = str(p.get("Notas", "") or "")
                 extras_cs = []
-                if "crosssell:" in notas_raw:
+                cs_raw = str(p.get("Crosssell_JSON", "") or "")
+                # Compatibilidad con pedidos viejos que tenían crosssell en Estado o Notas
+                if not cs_raw:
+                    if extra_en_estado:
+                        cs_raw = extra_en_estado.replace("crosssell:", "").strip()
+                    elif "crosssell:" in notas_limpias:
+                        cs_raw = notas_limpias.split("crosssell:")[1].strip()
+                        notas_limpias = notas_limpias.split("crosssell:")[0].strip()
+                if cs_raw:
                     try:
-                        extras_cs = json.loads(notas_raw.split("crosssell:")[1].strip())
+                        extras_cs = json.loads(cs_raw)
                     except:
                         extras_cs = []
 
@@ -1698,9 +1703,19 @@ def vista_admin(client, drive):
                         })
                     # Productos de cross-selling (guardados en Notas como JSON)
                     try:
-                        notas = str(p.get("Notas", ""))
-                        if "crosssell:" in notas:
-                            extras = json.loads(notas.split("crosssell:")[1])
+                        cs_json = str(p.get("Crosssell_JSON", "") or "")
+                        # Compatibilidad pedidos viejos
+                        if not cs_json:
+                            notas_v = str(p.get("Notas", "") or "")
+                            if "crosssell:" in notas_v:
+                                cs_json = notas_v.split("crosssell:")[1].strip()
+                            elif "crosssell:" in str(p.get("Estado", "")):
+                                cs_json = str(p.get("Estado","")).split("crosssell:")[1].strip()
+                        if cs_json:
+                            extras = json.loads(cs_json)
+                        else:
+                            extras = []
+                        if extras:
                             for ex in extras:
                                 filas.append({
                                     "Fecha":             p.get("Fecha", ""),
@@ -2291,9 +2306,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         if ws_ped:
                             cell_ped = ws_ped.find(st.session_state.get("pedido_id",""))
                             if cell_ped:
-                                notas_actuales = ws_ped.cell(cell_ped.row, 15).value or ""
-                                ws_ped.update_cell(cell_ped.row, 15,
-                                    (notas_actuales + " " if notas_actuales else "") + f"crosssell:{extras_json}")
+                                ws_ped.update_cell(cell_ped.row, 16, extras_json)
                                 st.cache_data.clear()
                     except:
                         pass
