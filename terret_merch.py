@@ -1733,7 +1733,7 @@ def vista_tienda(client, drive, codigo_equipo):
             f"<div style='width:64px;height:1px;background:#222;margin:0 auto 24px;'></div>"
             f"{logo_html_pin}"
             f"<div style='font-family:Bebas Neue,sans-serif;font-size:32px;"
-            f"letter-spacing:5px;color:{eq_color};margin-bottom:4px;line-height:1;'>"
+            f"letter-spacing:5px;color:{contraste_claro(eq_color)};margin-bottom:4px;line-height:1;'>"
             f"{eq_nombre.upper()}</div>"
             f"<div style='font-size:10px;color:#777;letter-spacing:3px;"
             f"margin-bottom:36px;font-family:DM Mono,monospace;'>COLECCIÓN EXCLUSIVA</div>"
@@ -1901,7 +1901,7 @@ def vista_tienda(client, drive, codigo_equipo):
                             f"<div style='font-size:10px;color:#666;margin-top:2px;'>"
                             f"T:{item['talla']} · x{item['cantidad']}{nombre_cam}</div>"
                             f"<div style='font-size:13px;font-family:Bebas Neue,sans-serif;"
-                            f"color:{eq_color};margin-top:4px;'>{fmt_precio(subtotal)}</div>"
+                            f"color:{contraste_claro(eq_color)};margin-top:4px;'>{fmt_precio(subtotal)}</div>"
                             f"</div></div>",
                             unsafe_allow_html=True,
                         )
@@ -1915,7 +1915,7 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"align-items:center;padding:14px 0 20px 0;'>"
                     f"<span style='font-size:9px;color:#666;letter-spacing:2px;'>TOTAL</span>"
                     f"<span style='font-family:Bebas Neue,sans-serif;font-size:22px;"
-                    f"color:{eq_color};'>{fmt_precio(total_sb)}</span></div>",
+                    f"color:{contraste_claro(eq_color)};'>{fmt_precio(total_sb)}</span></div>",
                     unsafe_allow_html=True,
                 )
                 if st.button("IR AL PAGO →", key="btn_ir_pago"):
@@ -1940,7 +1940,7 @@ def vista_tienda(client, drive, codigo_equipo):
                     f"margin-bottom:16px;'>"
                     f"<div style='font-size:10px;color:#666;'>{n_items} producto(s)</div>"
                     f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
-                    f"color:{eq_color};'>{fmt_precio(total_sb)}</div>"
+                    f"color:{contraste_claro(eq_color)};'>{fmt_precio(total_sb)}</div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
@@ -2084,7 +2084,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         f"<div style='font-size:12px;color:#0A0A0A;font-weight:500;"
                         f"line-height:1.4;margin-bottom:6px;'>{prod['titulo']}</div>"
                         f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
-                        f"color:{eq_color};'>{fmt_precio(prod['precio'])}</div>"
+                        f"color:{contraste_claro(eq_color)};'>{fmt_precio(prod['precio'])}</div>"
                         f"</div></div>",
                         unsafe_allow_html=True,
                     )
@@ -2162,7 +2162,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 f"display:flex;justify-content:space-between;align-items:center;'>"
                 f"<span style='font-size:9px;color:#666;letter-spacing:2px;'>EXTRA TOTAL</span>"
                 f"<span style='font-family:Bebas Neue,sans-serif;font-size:20px;"
-                f"color:{eq_color};'>{fmt_precio(total_cs)}</span>"
+                f"color:{contraste_claro(eq_color)};'>{fmt_precio(total_cs)}</span>"
                 f"</div></div>",
                 unsafe_allow_html=True,
             )
@@ -2294,7 +2294,7 @@ def vista_tienda(client, drive, codigo_equipo):
                 f"Talla: {item['talla']} · Cantidad: {item['cantidad']}{nombre_cam}</div>"
                 f"</div>"
                 f"<div style='font-family:Bebas Neue,sans-serif;font-size:18px;"
-                f"color:{eq_color};'>{fmt_precio(subtotal)}</div>"
+                f"color:{contraste_claro(eq_color)};'>{fmt_precio(subtotal)}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -2303,7 +2303,7 @@ def vista_tienda(client, drive, codigo_equipo):
             f"padding:20px 0;margin-top:8px;'>"
             f"<span style='font-size:10px;color:#777;letter-spacing:3px;'>TOTAL</span>"
             f"<span style='font-family:Bebas Neue,sans-serif;font-size:32px;"
-            f"color:{eq_color};'>{fmt_precio(total_ch)}</span>"
+            f"color:{contraste_claro(eq_color)};'>{fmt_precio(total_ch)}</span>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -2428,7 +2428,7 @@ def vista_tienda(client, drive, codigo_equipo):
                         f"<div style='font-size:11px;color:#666;margin-bottom:10px;"
                         f"line-height:1.5;'>{desc_short}</div>"
                         f"<div style='font-family:Bebas Neue,sans-serif;font-size:20px;"
-                        f"color:{eq_color};letter-spacing:1px;'>{fmt_precio(precio)}</div>"
+                        f"color:{contraste_claro(eq_color)};letter-spacing:1px;'>{fmt_precio(precio)}</div>"
                         f"</div></div>",
                         unsafe_allow_html=True,
                     )
@@ -2455,7 +2455,7 @@ def vista_tienda(client, drive, codigo_equipo):
 
                         st.markdown(
                             f"<div style='font-family:Bebas Neue,sans-serif;font-size:28px;"
-                            f"color:{eq_color};margin-bottom:4px;'>{fmt_precio(precio)}</div>",
+                            f"color:{contraste_claro(eq_color)};margin-bottom:4px;'>{fmt_precio(precio)}</div>",
                             unsafe_allow_html=True,
                         )
 
