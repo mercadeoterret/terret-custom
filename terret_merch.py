@@ -1861,87 +1861,87 @@ def vista_tienda(client, drive, codigo_equipo):
                 ]
 
             # Countdown dinámico en JS
-        if col_corte:
-            # Parsear la fecha de corte (formato DD/MM/YYYY)
-            try:
-                partes = col_corte.strip().split("/")
-                if len(partes) == 3:
-                    fecha_iso = f"{partes[2]}-{partes[1].zfill(2)}-{partes[0].zfill(2)}T23:59:59"
-                else:
+            if col_corte:
+                # Parsear la fecha de corte (formato DD/MM/YYYY)
+                try:
+                    partes = col_corte.strip().split("/")
+                    if len(partes) == 3:
+                        fecha_iso = f"{partes[2]}-{partes[1].zfill(2)}-{partes[0].zfill(2)}T23:59:59"
+                    else:
+                        fecha_iso = col_corte
+                except:
                     fecha_iso = col_corte
-            except:
-                fecha_iso = col_corte
-            countdown_id = f"cd_{col_id.replace('-','')}"
-            corte_html = (
-                f"<div style='margin-top:12px;margin-bottom:4px;'>"
-                f"<div style='font-size:9px;color:#555;letter-spacing:2px;"
-                f"margin-bottom:8px;font-family:DM Mono,monospace;'>CIERRE DE PEDIDOS</div>"
-                f"<div id='{countdown_id}' style='display:flex;gap:12px;align-items:flex-end;'>"
-                f"<div style='text-align:center;'>"
-                f"<div id='{countdown_id}_d' style='font-family:Bebas Neue,sans-serif;"
-                f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>DÍAS</div></div>"
-                f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                f"<div style='text-align:center;'>"
-                f"<div id='{countdown_id}_h' style='font-family:Bebas Neue,sans-serif;"
-                f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>HRS</div></div>"
-                f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                f"<div style='text-align:center;'>"
-                f"<div id='{countdown_id}_m' style='font-family:Bebas Neue,sans-serif;"
-                f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>MIN</div></div>"
-                f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
-                f"<div style='text-align:center;'>"
-                f"<div id='{countdown_id}_s' style='font-family:Bebas Neue,sans-serif;"
-                f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
-                f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>SEG</div></div>"
-                f"</div>"
-                f"<script>"
-                f"(function(){{"
-                f"var target = new Date('{fecha_iso}').getTime();"
-                f"function tick(){{"
-                f"var now = new Date().getTime();"
-                f"var diff = target - now;"
-                f"if(diff <= 0){{"
-                f"document.getElementById('{countdown_id}_d').innerText='00';"
-                f"document.getElementById('{countdown_id}_h').innerText='00';"
-                f"document.getElementById('{countdown_id}_m').innerText='00';"
-                f"document.getElementById('{countdown_id}_s').innerText='00';"
-                f"return;}}"
-                f"var d=Math.floor(diff/86400000);"
-                f"var h=Math.floor((diff%86400000)/3600000);"
-                f"var m=Math.floor((diff%3600000)/60000);"
-                f"var s=Math.floor((diff%60000)/1000);"
-                f"document.getElementById('{countdown_id}_d').innerText=String(d).padStart(2,'0');"
-                f"document.getElementById('{countdown_id}_h').innerText=String(h).padStart(2,'0');"
-                f"document.getElementById('{countdown_id}_m').innerText=String(m).padStart(2,'0');"
-                f"document.getElementById('{countdown_id}_s').innerText=String(s).padStart(2,'0');"
-                f"}}"
-                f"tick(); setInterval(tick, 1000);"
-                f"}})();"
-                f"</script>"
-                f"</div>"
-            )
-        else:
-            corte_html = ""
+                countdown_id = f"cd_{col_id.replace('-','')}"
+                corte_html = (
+                    f"<div style='margin-top:12px;margin-bottom:4px;'>"
+                    f"<div style='font-size:9px;color:#555;letter-spacing:2px;"
+                    f"margin-bottom:8px;font-family:DM Mono,monospace;'>CIERRE DE PEDIDOS</div>"
+                    f"<div id='{countdown_id}' style='display:flex;gap:12px;align-items:flex-end;'>"
+                    f"<div style='text-align:center;'>"
+                    f"<div id='{countdown_id}_d' style='font-family:Bebas Neue,sans-serif;"
+                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
+                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>DÍAS</div></div>"
+                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
+                    f"<div style='text-align:center;'>"
+                    f"<div id='{countdown_id}_h' style='font-family:Bebas Neue,sans-serif;"
+                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
+                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>HRS</div></div>"
+                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
+                    f"<div style='text-align:center;'>"
+                    f"<div id='{countdown_id}_m' style='font-family:Bebas Neue,sans-serif;"
+                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
+                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>MIN</div></div>"
+                    f"<div style='font-size:20px;color:#333;padding-bottom:6px;'>:</div>"
+                    f"<div style='text-align:center;'>"
+                    f"<div id='{countdown_id}_s' style='font-family:Bebas Neue,sans-serif;"
+                    f"font-size:32px;color:#FFB800;line-height:1;'>--</div>"
+                    f"<div style='font-size:8px;color:#555;letter-spacing:2px;margin-top:2px;'>SEG</div></div>"
+                    f"</div>"
+                    f"<script>"
+                    f"(function(){{"
+                    f"var target = new Date('{fecha_iso}').getTime();"
+                    f"function tick(){{"
+                    f"var now = new Date().getTime();"
+                    f"var diff = target - now;"
+                    f"if(diff <= 0){{"
+                    f"document.getElementById('{countdown_id}_d').innerText='00';"
+                    f"document.getElementById('{countdown_id}_h').innerText='00';"
+                    f"document.getElementById('{countdown_id}_m').innerText='00';"
+                    f"document.getElementById('{countdown_id}_s').innerText='00';"
+                    f"return;}}"
+                    f"var d=Math.floor(diff/86400000);"
+                    f"var h=Math.floor((diff%86400000)/3600000);"
+                    f"var m=Math.floor((diff%3600000)/60000);"
+                    f"var s=Math.floor((diff%60000)/1000);"
+                    f"document.getElementById('{countdown_id}_d').innerText=String(d).padStart(2,'0');"
+                    f"document.getElementById('{countdown_id}_h').innerText=String(h).padStart(2,'0');"
+                    f"document.getElementById('{countdown_id}_m').innerText=String(m).padStart(2,'0');"
+                    f"document.getElementById('{countdown_id}_s').innerText=String(s).padStart(2,'0');"
+                    f"}}"
+                    f"tick(); setInterval(tick, 1000);"
+                    f"}})();"
+                    f"</script>"
+                    f"</div>"
+                )
+            else:
+                corte_html = ""
 
-        st.markdown(
-            f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
-            f"border-bottom:1px solid #1A1A1A;'>"
-            f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
-            f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
-            f"{corte_html}</div>",
-            unsafe_allow_html=True,
-        )
-
-        if productos.empty:
             st.markdown(
-                "<div style='color:#555;font-size:13px;padding:20px 0;'>"
-                "Sin productos en esta colección aún.</div>",
+                f"<div style='margin:40px 0 20px 0;padding-bottom:14px;"
+                f"border-bottom:1px solid #1A1A1A;'>"
+                f"<div style='font-family:Bebas Neue,sans-serif;font-size:16px;"
+                f"letter-spacing:4px;color:{eq_color};'>{col_nombre.upper()}</div>"
+                f"{corte_html}</div>",
                 unsafe_allow_html=True,
             )
-            continue
+
+            if productos.empty:
+                st.markdown(
+                    "<div style='color:#555;font-size:13px;padding:20px 0;'>"
+                    "Sin productos en esta colección aún.</div>",
+                    unsafe_allow_html=True,
+                )
+                continue
 
             # Inicializar modal state
             if "modal_prod_id" not in st.session_state:
